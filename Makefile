@@ -1,7 +1,9 @@
 .PHONY: test lint fmt check
 
+TEST_DIRS := tests/dispatcher tests/cli tests/modules
+
 test:
-	bats tests/
+	bats $(TEST_DIRS)
 
 lint:
 	shellcheck -x libexec/git-hookd/_hookd libexec/git-hookd/cli/*.sh bin/git-hookd modules/**/*.sh

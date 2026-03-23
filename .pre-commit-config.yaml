@@ -32,4 +32,4 @@ repos:
         files: '\.bats$'
         types: [file]
         pass_filenames: false
-        args: ["tests/"]
+        args: ["tests/dispatcher", "tests/cli", "tests/modules"]

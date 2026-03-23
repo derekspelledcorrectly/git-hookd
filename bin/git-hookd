@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Resolve the project root (where libexec/ and modules/ live)
+GIT_HOOKD_ROOT="$(cd "$(dirname "$(realpath "$0")")/.." && pwd)"
+
+# Where hooks get installed (user-overridable)
+GIT_HOOKD_DIR="${GIT_HOOKD_DIR:-$HOME/.local/share/git-hookd}"
+export GIT_HOOKD_DIR
+
+VERSION="0.1.0"
+
+usage() {
+	cat <<EOF
+git-hookd v${VERSION} - modular global git hooks
+
+Usage: git hookd <command> [options]
+
+Commands:
+  install     Set up git-hookd (hooks directory + core.hooksPath)
+  uninstall   Remove git-hookd and restore previous hooks config
+  enable      Enable a bundled module
+  disable     Disable an enabled module
+  list        Show available and enabled modules
+  status      Show git-hookd status
+
+Options:
+  --help      Show this help
+  --version   Show version
+EOF
+}
+
+cmd="${1:-}"
+shift || true
+
+case "$cmd" in
+install | uninstall | enable | disable | list | status)
+	# shellcheck source=/dev/null
+	source "$GIT_HOOKD_ROOT/libexec/git-hookd/cli/${cmd}.sh"
+	;;
+--version | -v)
+	echo "git-hookd v${VERSION}"
+	;;
+--help | -h | "")
+	usage
+	;;
+*)
+	echo "Unknown command: $cmd" >&2
+	usage >&2
+	exit 1
+	;;
+esac
