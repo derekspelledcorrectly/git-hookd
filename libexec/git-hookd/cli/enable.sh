@@ -46,7 +46,11 @@ else
 	done
 fi
 
-# Validate module name (no path traversal)
+# Validate names (no path traversal)
+if [[ -n "$HOOK_EVENT" && ("$HOOK_EVENT" == *..* || "$HOOK_EVENT" == */*) ]]; then
+	printf 'Error: invalid hook event "%s"\n' "$HOOK_EVENT" >&2
+	exit 1
+fi
 if [[ "$MODULE_NAME" == *..* || "$MODULE_NAME" == */* ]]; then
 	printf 'Error: invalid module name "%s"\n' "$MODULE_NAME" >&2
 	exit 1

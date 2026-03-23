@@ -56,7 +56,10 @@ if [[ -x "${LOCAL_HOOK:-}" ]]; then
 		exec "$LOCAL_HOOK" "$@"
 	else
 		# Module failed; run local hook but preserve the failure exit code
-		"$LOCAL_HOOK" "$@" || true
+		"$LOCAL_HOOK" "$@" || {
+			printf '[git-hookd] Warning: local hook %s also failed (exit %d)\n' \
+				"$HOOK_NAME" "$?" >&2
+		}
 		exit "$module_failed"
 	fi
 fi

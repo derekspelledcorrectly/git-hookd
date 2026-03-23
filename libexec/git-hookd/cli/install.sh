@@ -8,6 +8,10 @@ for arg in "$@"; do
 	case "$arg" in
 	--force) FORCE=true ;;
 	--dry-run) DRY_RUN=true ;;
+	*)
+		printf 'Error: unknown option "%s"\n' "$arg" >&2
+		exit 1
+		;;
 	esac
 done
 
