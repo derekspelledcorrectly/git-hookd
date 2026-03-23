@@ -53,9 +53,20 @@ fi
 # Create directory structure
 mkdir -p "$GIT_HOOKD_DIR"
 
+# When GIT_HOOKD_ROOT == GIT_HOOKD_DIR (e.g. chezmoi external), skip copying
+HOOKD_ROOT_REAL="$(cd "$GIT_HOOKD_ROOT" && pwd -P)"
+HOOKD_DIR_REAL="$(cd "$GIT_HOOKD_DIR" && pwd -P)"
+
 # Copy the dispatcher
-cp "$GIT_HOOKD_ROOT/libexec/git-hookd/_hookd" "$GIT_HOOKD_DIR/_hookd"
-chmod +x "$GIT_HOOKD_DIR/_hookd"
+if [[ "$HOOKD_ROOT_REAL" != "$HOOKD_DIR_REAL" ]]; then
+	cp "$GIT_HOOKD_ROOT/libexec/git-hookd/_hookd" "$GIT_HOOKD_DIR/_hookd"
+	chmod +x "$GIT_HOOKD_DIR/_hookd"
+else
+	# In-place install: symlink dispatcher from libexec
+	if [[ ! -L "$GIT_HOOKD_DIR/_hookd" ]]; then
+		ln -sf "libexec/git-hookd/_hookd" "$GIT_HOOKD_DIR/_hookd"
+	fi
+fi
 
 # Create hook symlinks
 for hook in "${ALL_HOOKS[@]}"; do
@@ -64,8 +75,8 @@ for hook in "${ALL_HOOKS[@]}"; do
 	fi
 done
 
-# Copy bundled modules
-if [[ -d "$GIT_HOOKD_ROOT/modules" ]]; then
+# Copy bundled modules (skip when installing in-place)
+if [[ "$HOOKD_ROOT_REAL" != "$HOOKD_DIR_REAL" && -d "$GIT_HOOKD_ROOT/modules" ]]; then
 	mkdir -p "$GIT_HOOKD_DIR/modules"
 	cp -R "$GIT_HOOKD_ROOT/modules/." "$GIT_HOOKD_DIR/modules/"
 fi

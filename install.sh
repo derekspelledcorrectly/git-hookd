@@ -5,15 +5,110 @@ set -euo pipefail
 # Usage: curl -fsSL https://raw.githubusercontent.com/derekspelledcorrectly/git-hookd/main/install.sh | bash
 
 GIT_HOOKD_DIR="${GIT_HOOKD_DIR:-$HOME/.local/share/git-hookd}"
-REPO="derekspelledcorrectly/git-hookd"
-
-printf 'Installing git-hookd to %s...\n' "$GIT_HOOKD_DIR"
+REPO_URL="https://github.com/derekspelledcorrectly/git-hookd.git"
 
 # Require git
 if ! command -v git >/dev/null 2>&1; then
 	printf 'Error: git is required to install git-hookd\n' >&2
 	exit 1
 fi
+
+# --- Chezmoi detection ---
+
+install_mode="standard"
+
+if command -v chezmoi >/dev/null 2>&1; then
+	CHEZMOI_SOURCE="$(chezmoi source-path 2>/dev/null || true)"
+	if [[ -n "$CHEZMOI_SOURCE" ]]; then
+		printf 'Detected chezmoi (source: %s)\n\n' "$CHEZMOI_SOURCE"
+		printf 'git-hookd can integrate with chezmoi so new machines get it automatically.\n'
+		printf 'This would:\n'
+		printf '  1. Add a .chezmoiexternal.toml entry to pull git-hookd on chezmoi apply\n'
+		printf '  2. Add a chezmoi-managed symlink at ~/.local/bin/git-hookd\n'
+		printf '  3. Create a run_onchange script to set up hooks on apply\n'
+		printf '  4. Run chezmoi apply to complete the install\n'
+		printf '\n'
+		printf 'Options:\n'
+		printf '  [c] Install with chezmoi integration (recommended)\n'
+		printf '  [s] Standard install (skip chezmoi, just clone + symlink)\n'
+		printf '  [q] Quit\n'
+		printf '\n'
+
+		while true; do
+			printf 'Choice [c/s/q]: '
+			read -r choice </dev/tty
+			case "$choice" in
+			c | C) install_mode="chezmoi" && break ;;
+			s | S) install_mode="standard" && break ;;
+			q | Q) printf 'Aborted.\n' && exit 0 ;;
+			*) printf 'Please enter c, s, or q.\n' ;;
+			esac
+		done
+	fi
+fi
+
+# --- Chezmoi install ---
+
+if [[ "$install_mode" == "chezmoi" ]]; then
+	printf '\nSetting up chezmoi integration...\n'
+
+	EXTERNAL_FILE="$CHEZMOI_SOURCE/.chezmoiexternal.toml"
+
+	# 1. Add .chezmoiexternal.toml entry
+	if [[ -f "$EXTERNAL_FILE" ]] && grep -qF "git-hookd" "$EXTERNAL_FILE"; then
+		printf 'chezmoi external entry already exists, skipping.\n'
+	else
+		{
+			printf '\n# git-hookd: modular global git hooks framework\n'
+			printf '[".local/share/git-hookd"]\n'
+			printf '    type = "git-repo"\n'
+			printf '    url = "%s"\n' "$REPO_URL"
+			printf '    refreshPeriod = "168h"\n'
+		} >>"$EXTERNAL_FILE"
+		printf 'Added .chezmoiexternal.toml entry.\n'
+	fi
+
+	# 2. Create run_onchange script (handles symlink + install)
+	RUN_SCRIPT="$CHEZMOI_SOURCE/run_onchange_install-git-hookd.sh.tmpl"
+	if [[ -f "$RUN_SCRIPT" ]]; then
+		printf 'run_onchange script already exists, skipping.\n'
+	else
+		cat >"$RUN_SCRIPT" <<'SCRIPT'
+#!/usr/bin/env bash
+# git-hookd: run on chezmoi apply when the external repo changes
+# {{ $hookd := joinPath .chezmoi.homeDir ".local/share/git-hookd/libexec/git-hookd/_hookd" -}}
+# hash: {{ if stat $hookd }}{{ include $hookd | sha256sum }}{{ else }}not-yet-installed{{ end }}
+set -euo pipefail
+
+HOOKD="$HOME/.local/share/git-hookd"
+
+# Ensure CLI symlink exists
+BIN_DIR="$HOME/.local/bin"
+if [[ ! -L "$BIN_DIR/git-hookd" ]]; then
+    mkdir -p "$BIN_DIR"
+    ln -s "$HOOKD/bin/git-hookd" "$BIN_DIR/git-hookd"
+fi
+
+# Set up dispatcher and core.hooksPath
+if [[ -x "$HOOKD/bin/git-hookd" ]]; then
+    "$HOOKD/bin/git-hookd" install
+fi
+SCRIPT
+		chmod +x "$RUN_SCRIPT"
+		printf 'Created run_onchange_install-git-hookd.sh.tmpl.\n'
+	fi
+
+	# 4. Tell the user to finish up
+	printf '\nChezmoi source files are ready. To complete the install:\n\n'
+	printf '  chezmoi apply\n'
+	printf '  git hookd enable worktree-init\n\n'
+	printf 'On future machines, "chezmoi apply" will set up git-hookd automatically.\n'
+	exit 0
+fi
+
+# --- Standard install ---
+
+printf 'Installing git-hookd to %s...\n' "$GIT_HOOKD_DIR"
 
 if [[ -d "$GIT_HOOKD_DIR/.git" ]]; then
 	printf 'Updating existing installation...\n'
@@ -22,7 +117,7 @@ if [[ -d "$GIT_HOOKD_DIR/.git" ]]; then
 		exit 1
 	fi
 else
-	if ! git clone --quiet "https://github.com/${REPO}.git" "$GIT_HOOKD_DIR"; then
+	if ! git clone --quiet "$REPO_URL" "$GIT_HOOKD_DIR"; then
 		printf 'Error: failed to clone git-hookd repository\n' >&2
 		exit 1
 	fi

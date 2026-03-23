@@ -52,7 +52,19 @@ git hookd install
 
 ### chezmoi
 
-Add to your `.chezmoiexternal.toml`:
+The installer auto-detects chezmoi. Just run the curl|bash command above and
+choose the chezmoi option when prompted. It will:
+
+1. Add a `.chezmoiexternal.toml` entry to pull git-hookd on `chezmoi apply`
+2. Create a `run_onchange` script that creates the CLI symlink and runs
+   `git hookd install` on apply
+
+New machines get git-hookd automatically when you `chezmoi apply`.
+
+<details>
+<summary>Manual chezmoi setup</summary>
+
+If you prefer to set it up yourself, add to your `.chezmoiexternal.toml`:
 
 ```toml
 [".local/share/git-hookd"]
@@ -61,12 +73,16 @@ Add to your `.chezmoiexternal.toml`:
     refreshPeriod = "168h"
 ```
 
-Then add a `run_onchange_` script or run manually:
-
-```bash
-chezmoi apply
-~/.local/share/git-hookd/bin/git-hookd install
+Add a `run_onchange_install-git-hookd.sh.tmpl` script that creates the
+`~/.local/bin/git-hookd` symlink and calls `git hookd install` to set up
+the dispatcher and `core.hooksPath`. Use a chezmoi template hash to
+trigger on changes:
 ```
+# {{ $hookd := joinPath .chezmoi.homeDir ".local/share/git-hookd/libexec/git-hookd/_hookd" -}}
+# hash: {{ if stat $hookd }}{{ include $hookd | sha256sum }}{{ else }}not-yet-installed{{ end }}
+```
+
+</details>
 
 ### Custom install location
 
