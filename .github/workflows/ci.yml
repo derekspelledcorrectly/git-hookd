@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install shellcheck
+        run: sudo apt-get install -y shellcheck
+      - name: Install shfmt
+        env:
+          SHFMT_VERSION: "3.11.0"
+        run: |
+          curl -fsSL "https://github.com/mvdan/sh/releases/download/v${SHFMT_VERSION}/shfmt_v${SHFMT_VERSION}_linux_amd64" -o /usr/local/bin/shfmt
+          chmod +x /usr/local/bin/shfmt
+      - name: shellcheck
+        run: shellcheck -x libexec/git-hookd/_hookd libexec/git-hookd/cli/*.sh bin/git-hookd modules/**/*.sh install.sh
+      - name: shfmt
+        run: shfmt -d -i 0 -ci libexec/ bin/ modules/ install.sh
+
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: Install bats
+        shell: bash
+        run: |
+          if [[ "$RUNNER_OS" == "Linux" ]]; then
+            sudo apt-get install -y bats
+          else
+            brew install bats-core
+          fi
+      - name: Run tests
+        run: bats tests/dispatcher tests/cli tests/modules
