@@ -6,7 +6,6 @@ set -euo pipefail
 
 GIT_HOOKD_DIR="${GIT_HOOKD_DIR:-$HOME/.local/share/git-hookd}"
 REPO="derekspelledcorrectly/git-hookd"
-BRANCH="main"
 
 echo "Installing git-hookd to $GIT_HOOKD_DIR..."
 
