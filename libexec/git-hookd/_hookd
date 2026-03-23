@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+HOOK_NAME="$(basename "$0")"
+HOOKD_DIR="$(cd "$(dirname "$(realpath "$0")")" && pwd)"
+MODULE_DIR="${HOOKD_DIR}/${HOOK_NAME}.d"
+
+# Classify hook type: pre-hooks fail-fast, post-hooks run-all.
+is_pre_hook() {
+	case "$1" in
+	pre-* | prepare-commit-msg | commit-msg | update) return 0 ;;
+	*) return 1 ;;
+	esac
+}
+
+# --- Run modules ---
+module_failed=0
+if [[ -d "$MODULE_DIR" ]]; then
+	for module in "$MODULE_DIR"/*; do
+		# Skip broken symlinks (check before -x since broken links fail -x on macOS)
+		if [[ -L "$module" && ! -e "$module" ]]; then
+			printf '[git-hookd] Warning: %s is a broken symlink, skipping\n' "$(basename "$module")" >&2
+			continue
+		fi
+
+		# Skip non-executable entries
+		[[ -x "$module" ]] || continue
+
+		if is_pre_hook "$HOOK_NAME"; then
+			"$module" "$@" || {
+				rc=$?
+				printf '[git-hookd] Module %s failed (exit %d), aborting %s\n' \
+					"$(basename "$module")" "$rc" "$HOOK_NAME" >&2
+				exit "$rc"
+			}
+		else
+			"$module" "$@" || {
+				module_failed=$?
+				printf '[git-hookd] Module %s failed (exit %d)\n' \
+					"$(basename "$module")" "$module_failed" >&2
+			}
+		fi
+	done
+fi
+
+# --- Chain to local (repo-level) hook ---
+LOCAL_HOOK="$(git rev-parse --git-common-dir 2>/dev/null)/hooks/${HOOK_NAME}" || true
+
+if [[ -x "${LOCAL_HOOK:-}" ]]; then
+	exec "$LOCAL_HOOK" "$@"
+fi
+
+exit "$module_failed"
