@@ -100,8 +100,10 @@ SCRIPT
 
 	# 4. Tell the user to finish up
 	printf '\nChezmoi source files are ready. To complete the install:\n\n'
-	printf '  chezmoi apply\n'
-	printf '  git hookd enable worktree-init\n\n'
+	printf '  1. chezmoi apply\n'
+	printf '  2. git hookd enable worktree-init\n'
+	printf '  3. Commit the new files in your chezmoi repo:\n'
+	printf '     cd %s && git add .chezmoiexternal.toml run_onchange_install-git-hookd.sh.tmpl && git commit -m "feat: add git-hookd"\n\n' "$CHEZMOI_SOURCE"
 	printf 'On future machines, "chezmoi apply" will set up git-hookd automatically.\n'
 	exit 0
 fi
