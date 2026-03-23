@@ -14,6 +14,12 @@ else
 	MODULE_NAME="$MODULE_SPEC"
 fi
 
+# Validate module name (no path traversal)
+if [[ "$MODULE_NAME" == *..* || "$MODULE_NAME" == */* ]]; then
+	printf 'Error: invalid module name "%s"\n' "$MODULE_NAME" >&2
+	exit 1
+fi
+
 # Find and remove symlinks matching this module in any .d directory
 found=false
 for d_dir in "$GIT_HOOKD_DIR"/*.d; do

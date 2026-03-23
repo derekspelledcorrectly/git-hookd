@@ -12,8 +12,13 @@ fi
 # Restore previous hooksPath if we saved one
 if [[ -f "$GIT_HOOKD_DIR/.previous-hooks-path" ]]; then
 	previous_path="$(cat "$GIT_HOOKD_DIR/.previous-hooks-path")"
-	git config --global core.hooksPath "$previous_path"
-	echo "Restored core.hooksPath to $previous_path"
+	if [[ -z "$previous_path" ]]; then
+		printf 'Warning: saved previous hooks path is empty, unsetting core.hooksPath\n' >&2
+		git config --global --unset core.hooksPath 2>/dev/null || true
+	else
+		git config --global core.hooksPath "$previous_path"
+		printf 'Restored core.hooksPath to %s\n' "$previous_path"
+	fi
 else
 	git config --global --unset core.hooksPath 2>/dev/null || true
 fi

@@ -44,10 +44,21 @@ if [[ -d "$MODULE_DIR" ]]; then
 fi
 
 # --- Chain to local (repo-level) hook ---
-LOCAL_HOOK="$(git rev-parse --git-common-dir 2>/dev/null)/hooks/${HOOK_NAME}" || true
+if git_common_dir="$(git rev-parse --git-common-dir 2>/dev/null)"; then
+	LOCAL_HOOK="${git_common_dir}/hooks/${HOOK_NAME}"
+else
+	LOCAL_HOOK=""
+fi
 
 if [[ -x "${LOCAL_HOOK:-}" ]]; then
-	exec "$LOCAL_HOOK" "$@"
+	if [[ "$module_failed" -eq 0 ]]; then
+		# No module failures; hand off completely to local hook
+		exec "$LOCAL_HOOK" "$@"
+	else
+		# Module failed; run local hook but preserve the failure exit code
+		"$LOCAL_HOOK" "$@" || true
+		exit "$module_failed"
+	fi
 fi
 
 exit "$module_failed"

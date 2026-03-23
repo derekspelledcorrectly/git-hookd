@@ -103,7 +103,7 @@ teardown() {
 	assert_equal "$(cat "$BATS_TEST_TMPDIR/wt-reflect/.env")" "SECRET=updated"
 }
 
-@test "[link] silently skips when source file does not exist" {
+@test "[link] warns and skips when source file does not exist" {
 	cd "$REPO_DIR"
 	printf '[link]\nnonexistent.txt\n' >.worktree-init
 	git branch wt-link-missing --quiet
@@ -111,6 +111,7 @@ teardown() {
 	run git -c commit.gpgsign=false worktree add "$BATS_TEST_TMPDIR/wt-link-missing" wt-link-missing --quiet
 	assert_success
 	assert [ ! -e "$BATS_TEST_TMPDIR/wt-link-missing/nonexistent.txt" ]
+	assert_output --partial "Warning: nonexistent.txt not found"
 }
 
 # --- [copy] section ---
@@ -158,7 +159,7 @@ teardown() {
 	assert_equal "$(cat "$BATS_TEST_TMPDIR/wt-copy-exist/settings.json")" '{"local": true}'
 }
 
-@test "[copy] silently skips when source file does not exist" {
+@test "[copy] warns and skips when source file does not exist" {
 	cd "$REPO_DIR"
 	printf '[copy]\nnonexistent.txt\n' >.worktree-init
 	git branch wt-copy-missing --quiet
@@ -166,6 +167,7 @@ teardown() {
 	run git -c commit.gpgsign=false worktree add "$BATS_TEST_TMPDIR/wt-copy-missing" wt-copy-missing --quiet
 	assert_success
 	assert [ ! -e "$BATS_TEST_TMPDIR/wt-copy-missing/nonexistent.txt" ]
+	assert_output --partial "Warning: nonexistent.txt not found"
 }
 
 # --- [run] section ---
@@ -216,7 +218,7 @@ LIST
 	assert [ -L "$BATS_TEST_TMPDIR/wt-comments/.env" ]
 }
 
-@test "unknown sections are ignored" {
+@test "unknown sections warn and are skipped" {
 	cd "$REPO_DIR"
 	echo "SECRET=abc" >.env
 	cat >.worktree-init <<'MANIFEST'
@@ -231,6 +233,7 @@ MANIFEST
 	run git -c commit.gpgsign=false worktree add "$BATS_TEST_TMPDIR/wt-unknown" wt-unknown --quiet
 	assert_success
 	assert [ -L "$BATS_TEST_TMPDIR/wt-unknown/.env" ]
+	assert_output --partial "Warning: unknown section [future]"
 }
 
 @test "lines before first section header are ignored" {

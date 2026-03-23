@@ -8,6 +8,10 @@ ARGS=()
 while [[ $# -gt 0 ]]; do
 	case "$1" in
 	--priority)
+		if [[ -z "${2:-}" || ! "$2" =~ ^[0-9]+$ ]]; then
+			printf 'Error: --priority requires a positive integer\n' >&2
+			exit 1
+		fi
 		PRIORITY="$2"
 		shift 2
 		;;
@@ -40,6 +44,12 @@ else
 			break
 		fi
 	done
+fi
+
+# Validate module name (no path traversal)
+if [[ "$MODULE_NAME" == *..* || "$MODULE_NAME" == */* ]]; then
+	printf 'Error: invalid module name "%s"\n' "$MODULE_NAME" >&2
+	exit 1
 fi
 
 MODULE_PATH="$GIT_HOOKD_DIR/modules/$HOOK_EVENT/$MODULE_NAME.sh"

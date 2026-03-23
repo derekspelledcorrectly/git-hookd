@@ -42,7 +42,9 @@ while IFS= read -r line || [[ -n "$line" ]]; do
 	link) link_files+=("$line") ;;
 	copy) copy_files+=("$line") ;;
 	run) run_cmds+=("$line") ;;
-	*) ;; # Unknown sections are silently ignored for forward compatibility
+	*)
+		printf '[worktree-init] Warning: unknown section [%s] in .worktree-init, skipping\n' "$current_section" >&2
+		;;
 	esac
 done <"$MANIFEST"
 
@@ -52,6 +54,7 @@ for file in "${link_files[@]+"${link_files[@]}"}"; do
 	src="$MAIN_WORKTREE/$file"
 	dst="$CURRENT_DIR/$file"
 	if [[ ! -f "$src" ]]; then
+		printf '[worktree-init] Warning: %s not found in main worktree, skipping\n' "$file" >&2
 		continue
 	fi
 	if [[ -e "$dst" ]]; then
@@ -67,6 +70,7 @@ for file in "${copy_files[@]+"${copy_files[@]}"}"; do
 	src="$MAIN_WORKTREE/$file"
 	dst="$CURRENT_DIR/$file"
 	if [[ ! -f "$src" ]]; then
+		printf '[worktree-init] Warning: %s not found in main worktree, skipping\n' "$file" >&2
 		continue
 	fi
 	if [[ -e "$dst" ]]; then

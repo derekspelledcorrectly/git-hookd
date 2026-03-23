@@ -16,7 +16,9 @@ enabled_count=0
 for d_dir in "$GIT_HOOKD_DIR"/*.d; do
 	[[ -d "$d_dir" ]] || continue
 	for link in "$d_dir"/*; do
-		[[ -L "$link" ]] && ((enabled_count++)) || true
+		if [[ -L "$link" ]]; then
+			enabled_count=$((enabled_count + 1))
+		fi
 	done
 done
 

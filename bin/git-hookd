@@ -2,6 +2,10 @@
 set -euo pipefail
 
 # Resolve the project root (where libexec/ and modules/ live)
+if ! command -v realpath >/dev/null 2>&1; then
+	printf 'Error: "realpath" is required but not found\n' >&2
+	exit 1
+fi
 GIT_HOOKD_ROOT="$(cd "$(dirname "$(realpath "$0")")/.." && pwd)"
 
 # Where hooks get installed (user-overridable)

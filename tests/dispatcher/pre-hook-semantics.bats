@@ -97,6 +97,48 @@ HOOK
 	assert [ ! -f "$REPO_DIR/local-hook-ran" ]
 }
 
+@test "pre-commit failure reports specific exit code" {
+	mkdir -p "$GIT_HOOKD_DIR/pre-commit.d"
+	cat >"$GIT_HOOKD_DIR/pre-commit.d/50-fail7.sh" <<'MODULE'
+#!/usr/bin/env bash
+exit 7
+MODULE
+	chmod +x "$GIT_HOOKD_DIR/pre-commit.d/50-fail7.sh"
+
+	cd "$REPO_DIR"
+	echo "change" >file.txt
+	git add file.txt
+	run git -c commit.gpgsign=false commit -m "test" --quiet
+
+	assert_failure
+	assert_output --partial "failed (exit 7)"
+}
+
+@test "commit-msg gets pre-hook fail-fast semantics" {
+	mkdir -p "$GIT_HOOKD_DIR/commit-msg.d"
+
+	cat >"$GIT_HOOKD_DIR/commit-msg.d/10-block.sh" <<'MODULE'
+#!/usr/bin/env bash
+exit 1
+MODULE
+	chmod +x "$GIT_HOOKD_DIR/commit-msg.d/10-block.sh"
+
+	cat >"$GIT_HOOKD_DIR/commit-msg.d/20-second.sh" <<'MODULE'
+#!/usr/bin/env bash
+touch "$(git rev-parse --show-toplevel)/second-ran"
+MODULE
+	chmod +x "$GIT_HOOKD_DIR/commit-msg.d/20-second.sh"
+
+	cd "$REPO_DIR"
+	echo "change" >file.txt
+	git add file.txt
+	run git -c commit.gpgsign=false commit -m "test" --quiet
+
+	assert_failure
+	# Second module should NOT have run (fail-fast)
+	assert [ ! -f "$REPO_DIR/second-ran" ]
+}
+
 @test "pre-commit success chains to local hook" {
 	mkdir -p "$GIT_HOOKD_DIR/pre-commit.d"
 	cat >"$GIT_HOOKD_DIR/pre-commit.d/50-pass.sh" <<'MODULE'

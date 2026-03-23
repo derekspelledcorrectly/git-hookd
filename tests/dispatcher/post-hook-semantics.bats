@@ -104,3 +104,44 @@ HOOK
 
 	assert [ -f "$REPO_DIR/local-hook-ran" ]
 }
+
+@test "post-checkout module failure reports correct exit code" {
+	mkdir -p "$GIT_HOOKD_DIR/post-checkout.d"
+	cat >"$GIT_HOOKD_DIR/post-checkout.d/50-fail42.sh" <<'MODULE'
+#!/usr/bin/env bash
+exit 42
+MODULE
+	chmod +x "$GIT_HOOKD_DIR/post-checkout.d/50-fail42.sh"
+
+	cd "$REPO_DIR"
+	run git checkout -b test-branch --quiet
+
+	assert_failure
+	assert_output --partial "failed (exit 42)"
+}
+
+@test "post-checkout module failure is not swallowed when local hook exists" {
+	mkdir -p "$GIT_HOOKD_DIR/post-checkout.d"
+	cat >"$GIT_HOOKD_DIR/post-checkout.d/50-fail.sh" <<'MODULE'
+#!/usr/bin/env bash
+exit 3
+MODULE
+	chmod +x "$GIT_HOOKD_DIR/post-checkout.d/50-fail.sh"
+
+	mkdir -p "$REPO_DIR/.git/hooks"
+	cat >"$REPO_DIR/.git/hooks/post-checkout" <<'HOOK'
+#!/usr/bin/env bash
+touch "$(git rev-parse --show-toplevel)/local-hook-ran"
+exit 0
+HOOK
+	chmod +x "$REPO_DIR/.git/hooks/post-checkout"
+
+	cd "$REPO_DIR"
+	run git checkout -b test-branch --quiet
+
+	# Local hook should have run
+	assert [ -f "$REPO_DIR/local-hook-ran" ]
+	# Module failure should still cause overall failure (not swallowed by exec)
+	assert_failure
+	assert_output --partial "failed (exit 3)"
+}
