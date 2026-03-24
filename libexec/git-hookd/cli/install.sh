@@ -22,10 +22,11 @@ ALL_HOOKS=(
 	pre-push pre-rebase pre-receive prepare-commit-msg update
 )
 
-# Check if already installed
+# Check if already installed (compare both absolute and tilde forms)
 current_hooks_path="$(git config --global core.hooksPath 2>/dev/null || true)"
+HOOKD_PATH_TILDE="${GIT_HOOKD_DIR/#"$HOME"/\~}"
 
-if [[ "$current_hooks_path" == "$GIT_HOOKD_DIR" ]]; then
+if [[ "$current_hooks_path" == "$GIT_HOOKD_DIR" || "$current_hooks_path" == "$HOOKD_PATH_TILDE" ]]; then
 	echo "git-hookd already installed at $GIT_HOOKD_DIR"
 	exit 0
 fi
@@ -81,7 +82,8 @@ if [[ "$HOOKD_ROOT_REAL" != "$HOOKD_DIR_REAL" && -d "$GIT_HOOKD_ROOT/modules" ]]
 	cp -R "$GIT_HOOKD_ROOT/modules/." "$GIT_HOOKD_DIR/modules/"
 fi
 
-# Set core.hooksPath
-git config --global core.hooksPath "$GIT_HOOKD_DIR"
+# Set core.hooksPath (use ~ for portability and to match what users write in configs)
+HOOKD_PATH_FOR_CONFIG="${GIT_HOOKD_DIR/#"$HOME"/\~}"
+git config --global core.hooksPath "$HOOKD_PATH_FOR_CONFIG"
 
 echo "git-hookd installed to $GIT_HOOKD_DIR"

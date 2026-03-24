@@ -68,7 +68,36 @@ if [[ "$install_mode" == "chezmoi" ]]; then
 		printf 'Added .chezmoiexternal.toml entry.\n'
 	fi
 
-	# 2. Create run_onchange script (handles symlink + install)
+	# 2. Add hooksPath to chezmoi-managed git config template (if present)
+	GIT_CONFIG_TMPL=""
+	for candidate in "$CHEZMOI_SOURCE/dot_config/git/config.tmpl" \
+		"$CHEZMOI_SOURCE/dot_gitconfig.tmpl" \
+		"$CHEZMOI_SOURCE/private_dot_gitconfig.tmpl"; do
+		if [[ -f "$candidate" ]]; then
+			GIT_CONFIG_TMPL="$candidate"
+			break
+		fi
+	done
+
+	if [[ -n "$GIT_CONFIG_TMPL" ]]; then
+		if grep -q 'hooksPath.*git-hookd' "$GIT_CONFIG_TMPL"; then
+			printf 'hooksPath already in git config template, skipping.\n'
+		elif grep -q '^\[core\]' "$GIT_CONFIG_TMPL"; then
+			# Insert hooksPath after [core] section header
+			sed -i '' '/^\[core\]/a\
+	hooksPath = ~/.local/share/git-hookd
+' "$GIT_CONFIG_TMPL"
+			printf 'Added hooksPath to git config template.\n'
+		else
+			printf 'Warning: no [core] section found in %s\n' "$GIT_CONFIG_TMPL" >&2
+			printf 'Please add manually: hooksPath = ~/.local/share/git-hookd\n' >&2
+		fi
+	else
+		printf 'No chezmoi-managed git config template found.\n'
+		printf 'The run_onchange script will set core.hooksPath on apply.\n'
+	fi
+
+	# 3. Create run_onchange script (handles symlink + install)
 	RUN_SCRIPT="$CHEZMOI_SOURCE/run_onchange_install-git-hookd.sh.tmpl"
 	if [[ -f "$RUN_SCRIPT" ]]; then
 		printf 'run_onchange script already exists, skipping.\n'
@@ -102,8 +131,7 @@ SCRIPT
 	printf '\nChezmoi source files are ready. To complete the install:\n\n'
 	printf '  1. chezmoi apply\n'
 	printf '  2. git hookd enable worktree-init\n'
-	printf '  3. Commit the new files in your chezmoi repo:\n'
-	printf '     cd %s && git add .chezmoiexternal.toml run_onchange_install-git-hookd.sh.tmpl && git commit -m "feat: add git-hookd"\n\n' "$CHEZMOI_SOURCE"
+	printf '  3. Commit the changes in your chezmoi repo\n\n'
 	printf 'On future machines, "chezmoi apply" will set up git-hookd automatically.\n'
 	exit 0
 fi
