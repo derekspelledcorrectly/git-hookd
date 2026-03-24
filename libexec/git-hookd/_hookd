@@ -2,7 +2,9 @@
 set -euo pipefail
 
 HOOK_NAME="$(basename "$0")"
-HOOKD_DIR="$(cd "$(dirname "$(realpath "$0")")" && pwd)"
+# Use $0's directory, not realpath -- $0 is the hook symlink (e.g. post-checkout)
+# in the hookd dir, and we need that dir to find the .d/ directories.
+HOOKD_DIR="$(cd "$(dirname "$0")" && pwd)"
 MODULE_DIR="${HOOKD_DIR}/${HOOK_NAME}.d"
 
 # Classify hook type: pre-hooks fail-fast, post-hooks run-all.
