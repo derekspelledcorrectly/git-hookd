@@ -28,6 +28,12 @@ if [[ -d "$MODULE_DIR" ]]; then
 		# Skip non-executable entries
 		[[ -x "$module" ]] || continue
 
+		# Skip modules listed in hookd.skip (per-repo or global git config)
+		module_name="$(basename "$module" | sed 's/^[0-9]*-//; s/\.sh$//')"
+		if git config --get-all hookd.skip 2>/dev/null | grep -qx "$module_name"; then
+			continue
+		fi
+
 		if is_pre_hook "$HOOK_NAME"; then
 			"$module" "$@" || {
 				rc=$?
