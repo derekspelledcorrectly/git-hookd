@@ -67,6 +67,19 @@ teardown() {
 	assert_output --partial "already installed"
 }
 
+@test "install --force re-copies modules when already installed" {
+	"$CLI" install
+
+	# Remove a module to simulate outdated install
+	rm "$GIT_HOOKD_DIR/modules/post-checkout/worktree-init.sh"
+
+	run "$CLI" install --force
+	assert_success
+
+	# Module should be restored
+	assert [ -f "$GIT_HOOKD_DIR/modules/post-checkout/worktree-init.sh" ]
+}
+
 @test "install refuses when core.hooksPath is set to another directory" {
 	git config --global core.hooksPath /some/other/path
 	run "$CLI" install
