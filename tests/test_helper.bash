@@ -53,6 +53,9 @@ setup_hookd() {
 setup_test_repo() {
 	local repo_dir="${1:-$BATS_TEST_TMPDIR/repo}"
 	git init "$repo_dir" --quiet
-	git -C "$repo_dir" -c commit.gpgsign=false commit --allow-empty -m "init" --quiet
+	# Bypass global hooks for the seed commit so tests aren't affected
+	# by whatever modules the user has enabled (e.g. protect-branch).
+	git -C "$repo_dir" -c core.hooksPath=/dev/null -c commit.gpgsign=false \
+		commit --allow-empty -m "init" --quiet
 	echo "$repo_dir"
 }
