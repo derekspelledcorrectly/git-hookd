@@ -25,7 +25,7 @@ Pre-commit hooks run shellcheck, shfmt, and bats automatically on commit.
 
 ## Architecture
 
-**Dispatcher** (`libexec/git-hookd/_hookd`): All hook names (post-checkout, pre-commit, etc.) are symlinks to this single file. It determines the hook type from `basename "$0"`, runs modules from `<HOOKD_DIR>/<hook>.d/` in lexicographic order, then chains to the local `.git/hooks/<hook>`. Pre-hooks (`pre-*`, `prepare-commit-msg`, `commit-msg`, `update`) use fail-fast semantics; post-hooks use run-all.
+**Dispatcher** (`libexec/git-hookd/_hookd`): All hook names (post-checkout, pre-commit, etc.) are symlinks to this single file. It determines the hook type from `basename "$0"`, runs modules from `<HOOKD_DIR>/<hook>.d/` in lexicographic order, then chains to the local `.git/hooks/<hook>`. Pre-hooks (`pre-*`, `prepare-commit-msg`, `commit-msg`, `update`) use fail-fast semantics; post-hooks use run-all. Modules listed in `hookd.skip` git config are silently skipped (supports per-repo overrides).
 
 **CLI** (`bin/git-hookd`): Resolves project root, then sources the appropriate subcommand from `libexec/git-hookd/cli/`. Each subcommand is a standalone script. `GIT_HOOKD_DIR` (default `~/.local/share/git-hookd`) is where hooks get installed.
 
@@ -71,3 +71,4 @@ shfmt flags: `-i 0 -ci` (tab indentation, switch case indent). This is enforced 
 - Local hook chaining uses `git rev-parse --git-common-dir` to support worktrees.
 - `core.hooksPath` is stored with `~` prefix for portability.
 - In-place installs (chezmoi externals, where `GIT_HOOKD_ROOT == GIT_HOOKD_DIR`) symlink the dispatcher instead of copying, and skip module copying.
+- After changing CLI scripts, modules, or the dispatcher, run `./bin/git-hookd install --force` to copy updates to the install dir. The installed copy at `~/.local/share/git-hookd/` is independent of the repo.

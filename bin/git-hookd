@@ -21,21 +21,40 @@ git-hookd v${VERSION} - modular global git hooks
 Usage: git hookd <command> [options]
 
 Commands:
-  install     Set up git-hookd (hooks directory + core.hooksPath)
-  uninstall   Remove git-hookd and restore previous hooks config
-  enable      Enable a bundled module
-  disable     Disable an enabled module
-  list        Show available and enabled modules
-  status      Show git-hookd status
+  install [--force] [--dry-run]     Set up hooks directory + core.hooksPath
+  uninstall                         Remove git-hookd and restore previous config
+  enable [--priority N] <module>    Enable a module (symlink into .d/ dir)
+  disable <module>                  Disable a module (remove symlink)
+  list                              Show available modules and their status
+  status                            Show installation status
 
 Options:
-  --help      Show this help
-  --version   Show version
+  -h, --help      Show this help
+  -v, --version   Show version
+
+Configuration (git config):
+  hookd.skip <module>                   Skip a module in this repo
+  hookd.protect-branch.pattern <glob>   Custom protected branch patterns
+  hookd.auto-fetch.cooldown <seconds>   Fetch cooldown (default: 60)
+  hookd.auto-fetch.remote <name>        Remote to fetch (default: origin)
+
+  Use --global for all repos, or omit for per-repo config.
+  Use --add for multiple values (e.g. multiple skip entries).
 EOF
 }
 
 cmd="${1:-}"
 shift || true
+
+# Intercept --help/-h anywhere in args (e.g. "git hookd install --help")
+for arg in "$@"; do
+	case "$arg" in
+		--help | -h)
+			usage
+			exit 0
+			;;
+	esac
+done
 
 case "$cmd" in
 	install | uninstall | enable | disable | list | status)

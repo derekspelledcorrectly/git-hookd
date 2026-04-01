@@ -194,6 +194,23 @@ git hookd enable worktree-init
 git hookd enable auto-fetch
 ```
 
+### Skipping modules per-repo
+
+All enabled modules run globally. To skip specific modules in a repo:
+
+```bash
+# Skip protect-branch in this repo only
+git config hookd.skip protect-branch
+
+# Skip multiple modules
+git config --add hookd.skip auto-fetch
+
+# Remove a skip
+git config --unset hookd.skip protect-branch
+```
+
+This uses standard git config precedence, so per-repo settings override global ones.
+
 ## Writing Your Own Modules
 
 A module is just an executable shell script placed in the right directory:
@@ -266,6 +283,19 @@ make check
 ```
 
 Tests use [bats-core](https://bats-core.readthedocs.io/) with bats-support and bats-assert (vendored as submodules).
+
+### Reinstalling after changes
+
+The install copies files to `~/.local/share/git-hookd/`. If you're developing
+git-hookd itself, changes to CLI scripts, modules, or the dispatcher won't
+take effect until you reinstall:
+
+```bash
+./bin/git-hookd install --force
+```
+
+Run this from the repo after making changes. End users who installed via
+curl|bash don't need to worry about this.
 
 ## License
 
