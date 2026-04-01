@@ -38,19 +38,19 @@ cmd="${1:-}"
 shift || true
 
 case "$cmd" in
-install | uninstall | enable | disable | list | status)
-	# shellcheck source=/dev/null
-	source "$GIT_HOOKD_ROOT/libexec/git-hookd/cli/${cmd}.sh"
-	;;
---version | -v)
-	echo "git-hookd v${VERSION}"
-	;;
---help | -h | "")
-	usage
-	;;
-*)
-	echo "Unknown command: $cmd" >&2
-	usage >&2
-	exit 1
-	;;
+	install | uninstall | enable | disable | list | status)
+		# shellcheck source=/dev/null
+		source "$GIT_HOOKD_ROOT/libexec/git-hookd/cli/${cmd}.sh"
+		;;
+	--version | -v)
+		echo "git-hookd v${VERSION}"
+		;;
+	--help | -h | "")
+		usage
+		;;
+	*)
+		echo "Unknown command: $cmd" >&2
+		usage >&2
+		exit 1
+		;;
 esac

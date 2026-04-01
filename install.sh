@@ -38,10 +38,10 @@ if command -v chezmoi >/dev/null 2>&1; then
 			printf 'Choice [c/s/q]: '
 			read -r choice </dev/tty
 			case "$choice" in
-			c | C) install_mode="chezmoi" && break ;;
-			s | S) install_mode="standard" && break ;;
-			q | Q) printf 'Aborted.\n' && exit 0 ;;
-			*) printf 'Please enter c, s, or q.\n' ;;
+				c | C) install_mode="chezmoi" && break ;;
+				s | S) install_mode="standard" && break ;;
+				q | Q) printf 'Aborted.\n' && exit 0 ;;
+				*) printf 'Please enter c, s, or q.\n' ;;
 			esac
 		done
 	fi

@@ -7,18 +7,18 @@ PRIORITY=50
 ARGS=()
 while [[ $# -gt 0 ]]; do
 	case "$1" in
-	--priority)
-		if [[ -z "${2:-}" || ! "$2" =~ ^[0-9]+$ ]]; then
-			printf 'Error: --priority requires a positive integer\n' >&2
-			exit 1
-		fi
-		PRIORITY="$2"
-		shift 2
-		;;
-	*)
-		ARGS+=("$1")
-		shift
-		;;
+		--priority)
+			if [[ -z "${2:-}" || ! "$2" =~ ^[0-9]+$ ]]; then
+				printf 'Error: --priority requires a positive integer\n' >&2
+				exit 1
+			fi
+			PRIORITY="$2"
+			shift 2
+			;;
+		*)
+			ARGS+=("$1")
+			shift
+			;;
 	esac
 done
 

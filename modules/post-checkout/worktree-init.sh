@@ -39,12 +39,12 @@ while IFS= read -r line || [[ -n "$line" ]]; do
 		continue
 	fi
 	case "$current_section" in
-	link) link_files+=("$line") ;;
-	copy) copy_files+=("$line") ;;
-	run) run_cmds+=("$line") ;;
-	*)
-		printf '[worktree-init] Warning: unknown section [%s] in .worktree-init, skipping\n' "$current_section" >&2
-		;;
+		link) link_files+=("$line") ;;
+		copy) copy_files+=("$line") ;;
+		run) run_cmds+=("$line") ;;
+		*)
+			printf '[worktree-init] Warning: unknown section [%s] in .worktree-init, skipping\n' "$current_section" >&2
+			;;
 	esac
 done <"$MANIFEST"
 

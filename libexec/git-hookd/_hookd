@@ -10,8 +10,8 @@ MODULE_DIR="${HOOKD_DIR}/${HOOK_NAME}.d"
 # Classify hook type: pre-hooks fail-fast, post-hooks run-all.
 is_pre_hook() {
 	case "$1" in
-	pre-* | prepare-commit-msg | commit-msg | update) return 0 ;;
-	*) return 1 ;;
+		pre-* | prepare-commit-msg | commit-msg | update) return 0 ;;
+		*) return 1 ;;
 	esac
 }
 

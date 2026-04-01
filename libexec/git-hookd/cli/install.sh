@@ -6,12 +6,12 @@ DRY_RUN=false
 
 for arg in "$@"; do
 	case "$arg" in
-	--force) FORCE=true ;;
-	--dry-run) DRY_RUN=true ;;
-	*)
-		printf 'Error: unknown option "%s"\n' "$arg" >&2
-		exit 1
-		;;
+		--force) FORCE=true ;;
+		--dry-run) DRY_RUN=true ;;
+		*)
+			printf 'Error: unknown option "%s"\n' "$arg" >&2
+			exit 1
+			;;
 	esac
 done
 
@@ -27,11 +27,11 @@ current_hooks_path="$(git config --global core.hooksPath 2>/dev/null || true)"
 HOOKD_PATH_TILDE="${GIT_HOOKD_DIR/#"$HOME"/\~}"
 
 if [[ "$current_hooks_path" == "$GIT_HOOKD_DIR" || "$current_hooks_path" == "$HOOKD_PATH_TILDE" ]]; then
-	echo "git-hookd already installed at $GIT_HOOKD_DIR"
-	exit 0
-fi
-
-if [[ -n "$current_hooks_path" && "$FORCE" != "true" ]]; then
+	if [[ "$FORCE" != "true" ]]; then
+		echo "git-hookd already installed at $GIT_HOOKD_DIR"
+		exit 0
+	fi
+elif [[ -n "$current_hooks_path" && "$FORCE" != "true" ]]; then
 	echo "Error: core.hooksPath is already set to: $current_hooks_path" >&2
 	echo "Use --force to override." >&2
 	exit 1
@@ -58,10 +58,17 @@ mkdir -p "$GIT_HOOKD_DIR"
 HOOKD_ROOT_REAL="$(cd "$GIT_HOOKD_ROOT" && pwd -P)"
 HOOKD_DIR_REAL="$(cd "$GIT_HOOKD_DIR" && pwd -P)"
 
-# Copy the dispatcher
+# Copy the full project tree (dispatcher, CLI, bin entry point)
 if [[ "$HOOKD_ROOT_REAL" != "$HOOKD_DIR_REAL" ]]; then
 	cp "$GIT_HOOKD_ROOT/libexec/git-hookd/_hookd" "$GIT_HOOKD_DIR/_hookd"
 	chmod +x "$GIT_HOOKD_DIR/_hookd"
+
+	mkdir -p "$GIT_HOOKD_DIR/libexec/git-hookd/cli"
+	cp "$GIT_HOOKD_ROOT"/libexec/git-hookd/cli/*.sh "$GIT_HOOKD_DIR/libexec/git-hookd/cli/"
+
+	mkdir -p "$GIT_HOOKD_DIR/bin"
+	cp "$GIT_HOOKD_ROOT/bin/git-hookd" "$GIT_HOOKD_DIR/bin/git-hookd"
+	chmod +x "$GIT_HOOKD_DIR/bin/git-hookd"
 else
 	# In-place install: symlink dispatcher from libexec
 	if [[ ! -L "$GIT_HOOKD_DIR/_hookd" ]]; then
