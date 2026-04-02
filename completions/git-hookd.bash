@@ -14,6 +14,7 @@ _git_hookd_modules_available() {
 		for module_file in "$hook_dir"/*.sh; do
 			[[ -f "$module_file" ]] || continue
 			module_name="$(basename "$module_file" .sh)"
+			printf '%s\n' "$module_name"
 			printf '%s/%s\n' "$hook_event" "$module_name"
 		done
 	done
@@ -31,6 +32,7 @@ _git_hookd_modules_enabled() {
 			# Strip priority prefix (e.g., 50-) and .sh suffix
 			module_name="${module_name#*-}"
 			module_name="${module_name%.sh}"
+			printf '%s\n' "$module_name"
 			printf '%s/%s\n' "$hook_event" "$module_name"
 		done
 	done

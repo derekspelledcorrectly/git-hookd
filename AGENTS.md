@@ -31,6 +31,8 @@ Pre-commit hooks run shellcheck, shfmt, and bats automatically on commit.
 
 **Modules** (`modules/<hook-type>/<name>.sh`): Self-contained scripts that receive the same arguments git passes to the hook. Enabled by symlinking into `<hook>.d/` with a numeric priority prefix (e.g., `50-worktree-init.sh`).
 
+**Completions** (`completions/`): Three files. `git-hookd.bash` for bash-completion, `_git-hookd` for zsh native completion, and `_git_hookd` for Homebrew's git-completion.bash wrapper. The underscore variant uses `#autoload` and `__gitcomp` so `git hookd <TAB>` works when Homebrew provides the zsh git completion. Installed via `git hookd completions --install`.
+
 **Installer** (`install.sh`): Curl-pipe-bash installer with interactive chezmoi auto-detection. Reads from `/dev/tty` for interactive prompts to work under piped input.
 
 ## Module Conventions
@@ -72,3 +74,4 @@ shfmt flags: `-i 0 -ci` (tab indentation, switch case indent). This is enforced 
 - `core.hooksPath` is stored with `~` prefix for portability.
 - In-place installs (chezmoi externals, where `GIT_HOOKD_ROOT == GIT_HOOKD_DIR`) symlink the dispatcher instead of copying, and skip module copying.
 - After changing CLI scripts, modules, or the dispatcher, run `./bin/git-hookd install --force` to copy updates to the install dir. The installed copy at `~/.local/share/git-hookd/` is independent of the repo.
+- Interactive prompts must use `/dev/tty` for both input and output (for curl-pipe-bash compatibility). Probe with `printf '' >/dev/tty 2>/dev/null` before attempting; `-e /dev/tty` is true in bats/CI even when the device is not usable.

@@ -118,6 +118,8 @@ GIT_HOOKD_DIR=~/my/custom/path git hookd install
 | `git hookd disable <module>` | Disable a module (remove symlink) |
 | `git hookd list` | Show available modules and their status |
 | `git hookd status` | Show installation status |
+| `git hookd completions --install [bash\|zsh]` | Install shell completions |
+| `git hookd completions [bash\|zsh]` | Print completion script to stdout |
 
 ## Bundled Modules
 
@@ -296,6 +298,27 @@ take effect until you reinstall:
 
 Run this from the repo after making changes. End users who installed via
 curl|bash don't need to worry about this.
+
+## Shell Completions
+
+Tab completion is available for bash and zsh. The installer will offer to set
+them up, or you can install them later:
+
+```bash
+git hookd completions --install
+```
+
+This auto-detects your shell and copies the completion script to the standard
+location (`~/.local/share/bash-completion/completions/` for bash,
+`~/.zsh/completions/` for zsh). Both `git hookd <TAB>` and `git-hookd <TAB>`
+are supported, with dynamic module name completion for `enable` and `disable`.
+
+To print the completion script to stdout instead (for manual sourcing):
+
+```bash
+git hookd completions bash
+git hookd completions zsh
+```
 
 ## License
 

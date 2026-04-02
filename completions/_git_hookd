@@ -22,7 +22,7 @@ case "$subcommand" in
 				[[ -d "$hook_dir" ]] || continue
 				for module_file in "$hook_dir"/*.sh; do
 					[[ -f "$module_file" ]] || continue
-					modules="$modules $(basename "$hook_dir")/$(basename "$module_file" .sh)"
+					modules="$modules $(basename "$module_file" .sh) $(basename "$hook_dir")/$(basename "$module_file" .sh)"
 				done
 			done
 		fi
@@ -38,7 +38,7 @@ case "$subcommand" in
 				module_name="$(basename "$link")"
 				module_name="${module_name#*-}"
 				module_name="${module_name%.sh}"
-				modules="$modules $(basename "$d_dir" .d)/$module_name"
+				modules="$modules $module_name $(basename "$d_dir" .d)/$module_name"
 			done
 		done
 		__gitcomp "$modules"
