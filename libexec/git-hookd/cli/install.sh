@@ -93,4 +93,25 @@ fi
 HOOKD_PATH_FOR_CONFIG="${GIT_HOOKD_DIR/#"$HOME"/\~}"
 git config --global core.hooksPath "$HOOKD_PATH_FOR_CONFIG"
 
+# Offer to install shell completions
+if [[ -t 0 ]] || [[ -e /dev/tty ]]; then
+	printf '\nShell completions are available for bash and zsh.\n'
+	printf 'Install completions now? [y/N] ' >/dev/tty 2>/dev/null
+	if read -r answer </dev/tty 2>/dev/null; then
+		case "$answer" in
+			[yY] | [yY][eE][sS])
+				# Source completions subcommand with --install
+				source "$GIT_HOOKD_ROOT/libexec/git-hookd/cli/completions.sh" --install
+				;;
+			*)
+				printf 'Completions can be installed later with: git hookd completions --install\n'
+				;;
+		esac
+	else
+		printf 'Completions can be installed later with: git hookd completions --install\n'
+	fi
+else
+	printf 'Completions can be installed later with: git hookd completions --install\n'
+fi
+
 echo "git-hookd installed to $GIT_HOOKD_DIR"

@@ -112,3 +112,15 @@ teardown() {
 	run git config --global core.hooksPath
 	assert_failure
 }
+
+@test "install mentions completions when not interactive" {
+	run "$CLI" install
+	assert_success
+	assert_output --partial 'git hookd completions --install'
+}
+
+@test "install --dry-run does not prompt for completions" {
+	run "$CLI" install --dry-run
+	assert_success
+	refute_output --partial 'completions'
+}
