@@ -1,0 +1,47 @@
+#autoload
+# Completion for "git hookd" via Homebrew's git-completion.bash wrapper.
+# This file is autoloaded by compinit; the filename IS the function name.
+# Uses __gitcomp/__git_find_on_cmdline from git-completion.bash.
+
+local hookd_dir="${GIT_HOOKD_DIR:-$HOME/.local/share/git-hookd}"
+local subcommands="install uninstall enable disable list status completions"
+local subcommand="$(__git_find_on_cmdline "$subcommands")"
+
+if [[ -z "$subcommand" ]]; then
+	__gitcomp "$subcommands"
+	return
+fi
+
+case "$subcommand" in
+	install) __gitcomp "--force --dry-run" ;;
+	enable)
+		local modules=""
+		local hook_dir module_file
+		if [[ -d "$hookd_dir/modules" ]]; then
+			for hook_dir in "$hookd_dir"/modules/*/; do
+				[[ -d "$hook_dir" ]] || continue
+				for module_file in "$hook_dir"/*.sh; do
+					[[ -f "$module_file" ]] || continue
+					modules="$modules $(basename "$hook_dir")/$(basename "$module_file" .sh)"
+				done
+			done
+		fi
+		__gitcomp "$modules"
+		;;
+	disable)
+		local modules=""
+		local d_dir link module_name
+		for d_dir in "$hookd_dir"/*.d; do
+			[[ -d "$d_dir" ]] || continue
+			for link in "$d_dir"/*; do
+				[[ -L "$link" ]] || continue
+				module_name="$(basename "$link")"
+				module_name="${module_name#*-}"
+				module_name="${module_name%.sh}"
+				modules="$modules $(basename "$d_dir" .d)/$module_name"
+			done
+		done
+		__gitcomp "$modules"
+		;;
+	completions) __gitcomp "--install bash zsh" ;;
+esac

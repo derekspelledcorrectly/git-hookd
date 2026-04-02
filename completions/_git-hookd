@@ -1,0 +1,87 @@
+#compdef git-hookd
+# zsh completion for git-hookd
+# Install: git hookd completions --install zsh
+# Or place in a directory on your $fpath
+#
+# shellcheck shell=bash
+# shellcheck disable=SC2034,SC2154,SC1087,SC2296
+
+_git_hookd_modules_available() {
+	local hookd_dir="${GIT_HOOKD_DIR:-$HOME/.local/share/git-hookd}"
+	if [[ ! -d "$hookd_dir/modules" ]]; then
+		return
+	fi
+	local hook_dir module_file hook_event module_name
+	for hook_dir in "$hookd_dir"/modules/*/; do
+		[[ -d "$hook_dir" ]] || continue
+		hook_event="$(basename "$hook_dir")"
+		for module_file in "$hook_dir"/*.sh; do
+			[[ -f "$module_file" ]] || continue
+			module_name="$(basename "$module_file" .sh)"
+			echo "${hook_event}/${module_name}"
+		done
+	done
+}
+
+_git_hookd_modules_enabled() {
+	local hookd_dir="${GIT_HOOKD_DIR:-$HOME/.local/share/git-hookd}"
+	local d_dir link hook_event module_name
+	for d_dir in "$hookd_dir"/*.d; do
+		[[ -d "$d_dir" ]] || continue
+		hook_event="$(basename "$d_dir" .d)"
+		for link in "$d_dir"/*; do
+			[[ -L "$link" ]] || continue
+			module_name="$(basename "$link")"
+			# Strip priority prefix (e.g., 50-) and .sh suffix
+			module_name="${module_name#*-}"
+			module_name="${module_name%.sh}"
+			echo "${hook_event}/${module_name}"
+		done
+	done
+}
+
+_git-hookd() {
+	local -a commands=(
+		'install:Set up git-hookd (hooks directory + core.hooksPath)'
+		'uninstall:Remove git-hookd and restore previous hooks config'
+		'enable:Enable a bundled module'
+		'disable:Disable an enabled module'
+		'list:Show available and enabled modules'
+		'status:Show git-hookd status'
+		'completions:Install or print shell completions'
+	)
+
+	if ((CURRENT == 2)); then
+		_describe 'command' commands
+		return
+	fi
+
+	case "${words[2]}" in
+		install)
+			_arguments \
+				'--force[Override existing core.hooksPath]' \
+				'--dry-run[Show what would be done without making changes]'
+			;;
+		enable)
+			if [[ "$words[CURRENT]" == -* ]]; then
+				_arguments '--priority[Set module priority]:priority:'
+			else
+				local -a modules
+				modules=("${(@f)$(_git_hookd_modules_available)}")
+				_describe 'module' modules
+			fi
+			;;
+		disable)
+			local -a modules
+			modules=("${(@f)$(_git_hookd_modules_enabled)}")
+			_describe 'module' modules
+			;;
+		completions)
+			_arguments \
+				'--install[Install completions to standard directory]' \
+				':shell:(bash zsh)'
+			;;
+	esac
+}
+
+_git-hookd "$@"

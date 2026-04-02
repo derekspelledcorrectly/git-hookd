@@ -27,6 +27,7 @@ Commands:
   disable <module>                  Disable a module (remove symlink)
   list                              Show available modules and their status
   status                            Show installation status
+  completions                       Install or print shell completions
 
 Options:
   -h, --help      Show this help
@@ -57,7 +58,7 @@ for arg in "$@"; do
 done
 
 case "$cmd" in
-	install | uninstall | enable | disable | list | status)
+	install | uninstall | enable | disable | list | status | completions)
 		# shellcheck source=/dev/null
 		source "$GIT_HOOKD_ROOT/libexec/git-hookd/cli/${cmd}.sh"
 		;;
