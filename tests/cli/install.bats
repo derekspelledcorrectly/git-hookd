@@ -122,5 +122,12 @@ teardown() {
 @test "install --dry-run does not prompt for completions" {
 	run "$CLI" install --dry-run
 	assert_success
-	refute_output --partial 'completions'
+	refute_output --partial 'Install completions now?'
+}
+
+@test "install copies completion scripts to hookd dir" {
+	run "$CLI" install
+	assert_success
+	assert [ -f "$GIT_HOOKD_DIR/completions/git-hookd.bash" ]
+	assert [ -f "$GIT_HOOKD_DIR/completions/_git-hookd" ]
 }

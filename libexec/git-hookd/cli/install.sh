@@ -42,6 +42,7 @@ if [[ "$DRY_RUN" == "true" ]]; then
 	echo "[dry-run] Would copy dispatcher and create hook symlinks"
 	echo "[dry-run] Would set core.hooksPath to $GIT_HOOKD_DIR"
 	echo "[dry-run] Would copy bundled modules"
+	echo "[dry-run] Would copy completion scripts"
 	exit 0
 fi
 
@@ -89,14 +90,22 @@ if [[ "$HOOKD_ROOT_REAL" != "$HOOKD_DIR_REAL" && -d "$GIT_HOOKD_ROOT/modules" ]]
 	cp -R "$GIT_HOOKD_ROOT/modules/." "$GIT_HOOKD_DIR/modules/"
 fi
 
+# Copy completion scripts (skip when installing in-place)
+if [[ "$HOOKD_ROOT_REAL" != "$HOOKD_DIR_REAL" ]]; then
+	if [[ -d "$GIT_HOOKD_ROOT/completions" ]]; then
+		mkdir -p "$GIT_HOOKD_DIR/completions"
+		cp "$GIT_HOOKD_ROOT"/completions/* "$GIT_HOOKD_DIR/completions/"
+	fi
+fi
+
 # Set core.hooksPath (use ~ for portability and to match what users write in configs)
 HOOKD_PATH_FOR_CONFIG="${GIT_HOOKD_DIR/#"$HOME"/\~}"
 git config --global core.hooksPath "$HOOKD_PATH_FOR_CONFIG"
 
 # Offer to install shell completions
-if [[ -t 0 ]] || [[ -e /dev/tty ]]; then
+if { printf '' >/dev/tty; } 2>/dev/null; then
 	printf '\nShell completions are available for bash and zsh.\n'
-	printf 'Install completions now? [y/N] ' >/dev/tty 2>/dev/null
+	printf 'Install completions now? [y/N] ' >/dev/tty
 	if read -r answer </dev/tty 2>/dev/null; then
 		case "$answer" in
 			[yY] | [yY][eE][sS])
