@@ -6,11 +6,11 @@ test:
 	bats $(TEST_DIRS)
 
 lint:
-	shellcheck -x libexec/git-hookd/_hookd libexec/git-hookd/cli/*.sh bin/git-hookd modules/**/*.sh install.sh
-	shfmt -d -i 0 -ci libexec/ bin/ modules/ install.sh
+	shellcheck -x libexec/git-hookd/_hookd libexec/git-hookd/cli/*.sh bin/git-hookd modules/**/*.sh install.sh completions/git-hookd.bash completions/_git-hookd
+	shfmt -d -i 0 -ci libexec/ bin/ modules/ install.sh completions/
 
 fmt:
-	shfmt -w -i 0 -ci libexec/ bin/ modules/ install.sh
+	shfmt -w -i 0 -ci libexec/ bin/ modules/ install.sh completions/
 
 check: lint test
 
