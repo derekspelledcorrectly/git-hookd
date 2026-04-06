@@ -1,5 +1,7 @@
 # git-hookd
 
+[![CI](https://github.com/derekspelledcorrectly/git-hookd/actions/workflows/ci.yml/badge.svg)](https://github.com/derekspelledcorrectly/git-hookd/actions/workflows/ci.yml)
+
 A lightweight, modular global git hooks framework.
 
 ## Why?
