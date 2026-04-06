@@ -8,7 +8,7 @@ on:
 
 jobs:
   lint:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: Install shellcheck
@@ -19,27 +19,29 @@ jobs:
         run: |
           curl -fsSL "https://github.com/mvdan/sh/releases/download/v${SHFMT_VERSION}/shfmt_v${SHFMT_VERSION}_linux_amd64" -o /usr/local/bin/shfmt
           chmod +x /usr/local/bin/shfmt
-      - name: shellcheck
-        run: shellcheck -x libexec/git-hookd/_hookd libexec/git-hookd/cli/*.sh bin/git-hookd modules/**/*.sh install.sh
-      - name: shfmt
-        run: shfmt -d -i 0 -ci libexec/ bin/ modules/ install.sh
+      - name: Lint
+        run: make lint
 
   test:
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-24.04, macos-latest]
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: true
-      - name: Install bats
-        shell: bash
+      - name: Install bats (Linux)
+        if: runner.os == 'Linux'
+        env:
+          BATS_VERSION: "1.12.0"
         run: |
-          if [[ "$RUNNER_OS" == "Linux" ]]; then
-            sudo apt-get install -y bats
-          else
-            brew install bats-core
-          fi
+          sudo mkdir -p /usr/local/lib
+          curl -fsSL "https://github.com/bats-core/bats-core/archive/refs/tags/v${BATS_VERSION}.tar.gz" | sudo tar -xz -C /usr/local/lib
+          sudo /usr/local/lib/bats-core-${BATS_VERSION}/install.sh /usr/local
+      - name: Install bats (macOS)
+        if: runner.os == 'macOS'
+        run: brew install bats-core
       - name: Run tests
-        run: bats tests/dispatcher tests/cli tests/modules
+        run: make test
