@@ -14,7 +14,10 @@ branch="$(git symbolic-ref --short HEAD 2>/dev/null)" || exit 0
 # Distinguish "key not found" (exit 1, normal) from "config broken" (other
 # exit codes). A security hook must fail closed on unexpected errors.
 if config_output="$(git config --get-all hookd.protect-branch.pattern 2>&1)"; then
-	mapfile -t patterns <<<"$config_output"
+	patterns=()
+	while IFS= read -r line; do
+		patterns+=("$line")
+	done <<<"$config_output"
 else
 	rc=$?
 	if [[ $rc -eq 1 ]]; then
