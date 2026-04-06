@@ -52,7 +52,7 @@ setup_hookd() {
 # Create a git repo in the temp dir with one initial commit.
 setup_test_repo() {
 	local repo_dir="${1:-$BATS_TEST_TMPDIR/repo}"
-	git init "$repo_dir" --quiet
+	git init "$repo_dir" --quiet -b main
 	git -C "$repo_dir" config user.name "Test User"
 	git -C "$repo_dir" config user.email "test@example.com"
 	# Bypass global hooks for the seed commit so tests aren't affected
