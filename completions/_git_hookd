@@ -4,7 +4,7 @@
 # Uses __gitcomp/__git_find_on_cmdline from git-completion.bash.
 
 local hookd_dir="${GIT_HOOKD_DIR:-$HOME/.local/share/git-hookd}"
-local subcommands="install uninstall enable disable list status completions"
+local subcommands="install uninstall enable disable list status exec completions"
 local subcommand="$(__git_find_on_cmdline "$subcommands")"
 
 if [[ -z "$subcommand" ]]; then

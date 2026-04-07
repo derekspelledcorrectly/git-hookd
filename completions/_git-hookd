@@ -50,6 +50,7 @@ _git-hookd() {
 		'disable:Disable an enabled module'
 		'list:Show available and enabled modules'
 		'status:Show git-hookd status'
+		'exec:Run a command with core.hooksPath temporarily unset'
 		'completions:Install or print shell completions'
 	)
 

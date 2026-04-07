@@ -42,7 +42,7 @@ _git_hookd() {
 	local cur words cword
 	_init_completion || return
 
-	local commands="install uninstall enable disable list status completions"
+	local commands="install uninstall enable disable list status exec completions"
 
 	if ((cword == 1)); then
 		mapfile -t COMPREPLY < <(compgen -W "$commands" -- "$cur")
