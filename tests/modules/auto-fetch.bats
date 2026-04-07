@@ -186,6 +186,43 @@ fake_git() {
 	assert_output --partial "invalid cooldown"
 }
 
+# --- Remote name validation ---
+
+@test "rejects remote name with slashes" {
+	cd "$REPO_DIR"
+	git config hookd.auto-fetch.remote "https://evil.example/repo.git"
+	git branch feature
+
+	run fake_git checkout feature --quiet
+	assert_success
+	assert [ ! -f "$FETCH_LOG" ]
+	assert_output --partial "invalid remote name"
+}
+
+@test "rejects remote name with spaces" {
+	cd "$REPO_DIR"
+	git config hookd.auto-fetch.remote "origin foo"
+	git branch feature
+
+	run fake_git checkout feature --quiet
+	assert_success
+	assert [ ! -f "$FETCH_LOG" ]
+	assert_output --partial "invalid remote name"
+}
+
+@test "accepts valid remote names" {
+	cd "$REPO_DIR"
+	git config hookd.auto-fetch.remote "my-remote_2.0"
+	git branch feature
+
+	rm -f "$(git rev-parse --git-dir)/FETCH_HEAD"
+
+	run fake_git checkout feature --quiet
+	# Should NOT trigger validation warning (will fail on get-url instead)
+	refute_output --partial "invalid remote name"
+	assert_output --partial "not found"
+}
+
 # --- Edge cases ---
 
 @test "skips silently when remote does not exist" {

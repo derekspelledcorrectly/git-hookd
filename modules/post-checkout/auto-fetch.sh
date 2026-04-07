@@ -11,6 +11,13 @@ CHECKOUT_TYPE="${3:-0}"
 
 # Read config
 remote="$(git config hookd.auto-fetch.remote 2>/dev/null || echo "origin")"
+
+# Validate remote name format (prevent URLs or special characters)
+if [[ ! "$remote" =~ ^[a-zA-Z0-9_.-]+$ ]]; then
+	printf '[auto-fetch] Warning: invalid remote name "%s", skipping\n' "$remote" >&2
+	exit 0
+fi
+
 cooldown="$(git config hookd.auto-fetch.cooldown 2>/dev/null || echo "60")"
 if ! [[ "$cooldown" =~ ^[0-9]+$ ]]; then
 	printf '[auto-fetch] Warning: invalid cooldown "%s", using default 60s\n' "$cooldown" >&2
