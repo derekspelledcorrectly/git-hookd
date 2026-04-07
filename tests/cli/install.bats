@@ -131,3 +131,47 @@ teardown() {
 	assert [ -f "$GIT_HOOKD_DIR/completions/git-hookd.bash" ]
 	assert [ -f "$GIT_HOOKD_DIR/completions/_git-hookd" ]
 }
+
+# --- GIT_HOOKD_DIR validation ---
+
+@test "rejects non-absolute GIT_HOOKD_DIR" {
+	run env GIT_HOOKD_DIR="relative/path" "$PROJECT_ROOT/bin/git-hookd" status
+	assert_failure
+	assert_output --partial "absolute path"
+}
+
+@test "rejects GIT_HOOKD_DIR set to /" {
+	run env GIT_HOOKD_DIR="/" "$PROJECT_ROOT/bin/git-hookd" status
+	assert_failure
+	assert_output --partial "dangerous path"
+}
+
+@test "rejects GIT_HOOKD_DIR set to HOME" {
+	run env GIT_HOOKD_DIR="$HOME" "$PROJECT_ROOT/bin/git-hookd" status
+	assert_failure
+	assert_output --partial "dangerous path"
+}
+
+@test "rejects GIT_HOOKD_DIR set to /tmp" {
+	run env GIT_HOOKD_DIR="/tmp" "$PROJECT_ROOT/bin/git-hookd" status
+	assert_failure
+	assert_output --partial "dangerous path"
+}
+
+@test "rejects GIT_HOOKD_DIR set to /etc" {
+	run env GIT_HOOKD_DIR="/etc" "$PROJECT_ROOT/bin/git-hookd" status
+	assert_failure
+	assert_output --partial "dangerous path"
+}
+
+@test "rejects GIT_HOOKD_DIR set to /usr" {
+	run env GIT_HOOKD_DIR="/usr" "$PROJECT_ROOT/bin/git-hookd" status
+	assert_failure
+	assert_output --partial "dangerous path"
+}
+
+@test "rejects GIT_HOOKD_DIR set to /var" {
+	run env GIT_HOOKD_DIR="/var" "$PROJECT_ROOT/bin/git-hookd" status
+	assert_failure
+	assert_output --partial "dangerous path"
+}

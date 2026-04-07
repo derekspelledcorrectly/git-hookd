@@ -10,6 +10,19 @@ GIT_HOOKD_ROOT="$(cd "$(dirname "$(realpath "$0")")/.." && pwd)"
 
 # Where hooks get installed (user-overridable)
 GIT_HOOKD_DIR="${GIT_HOOKD_DIR:-$HOME/.local/share/git-hookd}"
+
+# Validate GIT_HOOKD_DIR is safe
+if [[ "$GIT_HOOKD_DIR" != /* ]]; then
+	printf 'Error: GIT_HOOKD_DIR must be an absolute path\n' >&2
+	exit 1
+fi
+case "$GIT_HOOKD_DIR" in
+	/ | "$HOME" | /tmp | /etc | /usr | /var)
+		printf 'Error: GIT_HOOKD_DIR "%s" is a dangerous path\n' "$GIT_HOOKD_DIR" >&2
+		exit 1
+		;;
+esac
+
 export GIT_HOOKD_DIR
 
 VERSION="0.1.0"

@@ -16,6 +16,9 @@ setup() {
 	mkdir -p "$GIT_HOOKD_DIR/post-checkout.d"
 	ln -s "$PROJECT_ROOT/modules/post-checkout/worktree-init.sh" \
 		"$GIT_HOOKD_DIR/post-checkout.d/50-worktree-init.sh"
+
+	# Opt in to [run] commands for existing tests
+	git -C "$REPO_DIR" config hookd.worktree-init.allow-run true
 }
 
 teardown() {
@@ -312,4 +315,73 @@ MANIFEST
 	run git -c commit.gpgsign=false worktree add "$BATS_TEST_TMPDIR/wt-no-manifest" wt-no-manifest --quiet
 	assert_success
 	assert [ ! -e "$BATS_TEST_TMPDIR/wt-no-manifest/.env" ]
+}
+
+# --- Security: [run] opt-in gate ---
+
+@test "[run] blocked when allow-run is not configured" {
+	cd "$REPO_DIR"
+	git config --unset hookd.worktree-init.allow-run
+	printf '[run]\ntouch marker.txt\n' >.worktree-init
+	git branch wt-run-blocked --quiet
+
+	run git -c commit.gpgsign=false worktree add "$BATS_TEST_TMPDIR/wt-run-blocked" wt-run-blocked --quiet
+	assert_failure
+
+	assert [ ! -f "$BATS_TEST_TMPDIR/wt-run-blocked/marker.txt" ]
+	assert_output --partial "touch marker.txt"
+	assert_output --partial "hookd.worktree-init.allow-run"
+}
+
+@test "[run] allowed when allow-run is true (local config)" {
+	cd "$REPO_DIR"
+	# setup() already sets this, but be explicit
+	git config hookd.worktree-init.allow-run true
+	printf '[run]\ntouch marker.txt\n' >.worktree-init
+	git branch wt-run-local --quiet
+
+	run git -c commit.gpgsign=false worktree add "$BATS_TEST_TMPDIR/wt-run-local" wt-run-local --quiet
+	assert_success
+	assert [ -f "$BATS_TEST_TMPDIR/wt-run-local/marker.txt" ]
+}
+
+@test "[run] allowed when allow-run is true (global config)" {
+	cd "$REPO_DIR"
+	git config --unset hookd.worktree-init.allow-run
+	git config --global hookd.worktree-init.allow-run true
+	printf '[run]\ntouch marker.txt\n' >.worktree-init
+	git branch wt-run-global --quiet
+
+	run git -c commit.gpgsign=false worktree add "$BATS_TEST_TMPDIR/wt-run-global" wt-run-global --quiet
+	assert_success
+	assert [ -f "$BATS_TEST_TMPDIR/wt-run-global/marker.txt" ]
+}
+
+# --- Security: path traversal protection ---
+
+@test "[link] rejects path traversal with warning" {
+	cd "$REPO_DIR"
+	# Create the file that traversal would reach
+	echo "evil" >"$BATS_TEST_TMPDIR/evil.txt"
+	printf '[link]\n../../../tmp/evil.txt\n' >.worktree-init
+	git branch wt-link-traversal --quiet
+
+	run git -c commit.gpgsign=false worktree add "$BATS_TEST_TMPDIR/wt-link-traversal" wt-link-traversal --quiet
+	assert_success
+
+	assert_output --partial "path traversal"
+	assert [ ! -e "$BATS_TEST_TMPDIR/wt-link-traversal/../../../tmp/evil.txt" ]
+}
+
+@test "[copy] rejects path traversal with warning" {
+	cd "$REPO_DIR"
+	echo "evil" >"$BATS_TEST_TMPDIR/evil.txt"
+	printf '[copy]\n../../../tmp/evil.txt\n' >.worktree-init
+	git branch wt-copy-traversal --quiet
+
+	run git -c commit.gpgsign=false worktree add "$BATS_TEST_TMPDIR/wt-copy-traversal" wt-copy-traversal --quiet
+	assert_success
+
+	assert_output --partial "path traversal"
+	assert [ ! -e "$BATS_TEST_TMPDIR/wt-copy-traversal/../../../tmp/evil.txt" ]
 }

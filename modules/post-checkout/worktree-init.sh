@@ -48,9 +48,26 @@ while IFS= read -r line || [[ -n "$line" ]]; do
 	esac
 done <"$MANIFEST"
 
+# Validate that a manifest path stays within its base directory.
+# Uses python3 for portable path normalization (macOS realpath lacks -m).
+path_is_contained() {
+	local base="$1" rel="$2"
+	local resolved
+	resolved="$(python3 -c "import os,sys; print(os.path.normpath(os.path.join(sys.argv[1], sys.argv[2])))" "$base" "$rel")"
+	case "$resolved" in
+		"$base" | "$base"/*) return 0 ;;
+		*) return 1 ;;
+	esac
+}
+
 # Execute in fixed order: link, copy, run
 
 for file in "${link_files[@]+"${link_files[@]}"}"; do
+	# Reject paths that escape the worktree
+	if ! path_is_contained "$MAIN_WORKTREE" "$file" || ! path_is_contained "$CURRENT_DIR" "$file"; then
+		printf '[worktree-init] Warning: path traversal detected in "%s", skipping\n' "$file" >&2
+		continue
+	fi
 	src="$MAIN_WORKTREE/$file"
 	dst="$CURRENT_DIR/$file"
 	if [[ ! -f "$src" ]]; then
@@ -67,6 +84,11 @@ for file in "${link_files[@]+"${link_files[@]}"}"; do
 done
 
 for file in "${copy_files[@]+"${copy_files[@]}"}"; do
+	# Reject paths that escape the worktree
+	if ! path_is_contained "$MAIN_WORKTREE" "$file" || ! path_is_contained "$CURRENT_DIR" "$file"; then
+		printf '[worktree-init] Warning: path traversal detected in "%s", skipping\n' "$file" >&2
+		continue
+	fi
 	src="$MAIN_WORKTREE/$file"
 	dst="$CURRENT_DIR/$file"
 	if [[ ! -f "$src" ]]; then
@@ -81,6 +103,21 @@ for file in "${copy_files[@]+"${copy_files[@]}"}"; do
 	cp "$src" "$dst"
 	printf '[worktree-init] Copied %s\n' "$file"
 done
+
+# Gate [run] commands behind explicit opt-in (like direnv allow).
+# Uses standard git config precedence: local (per-repo) > global.
+if [[ ${#run_cmds[@]} -gt 0 ]]; then
+	run_allowed="$(git config --bool hookd.worktree-init.allow-run 2>/dev/null || echo "false")"
+	if [[ "$run_allowed" != "true" ]]; then
+		printf '[worktree-init] [run] commands found but execution is not allowed:\n' >&2
+		for cmd in "${run_cmds[@]}"; do
+			printf '[worktree-init]   %s\n' "$cmd" >&2
+		done
+		printf '[worktree-init] To allow for this repo: git config hookd.worktree-init.allow-run true\n' >&2
+		printf '[worktree-init] To allow globally:      git config --global hookd.worktree-init.allow-run true\n' >&2
+		exit 1
+	fi
+fi
 
 rc=0
 for cmd in "${run_cmds[@]+"${run_cmds[@]}"}"; do

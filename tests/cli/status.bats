@@ -41,3 +41,12 @@ teardown() {
 	assert_success
 	assert_output --partial "1 module"
 }
+
+@test "status shows active when core.hooksPath uses tilde form" {
+	# Install stores tilde form; simulate it
+	HOOKD_PATH_TILDE="~${GIT_HOOKD_DIR#"$HOME"}"
+	git config --global core.hooksPath "$HOOKD_PATH_TILDE"
+	run "$CLI" status
+	assert_success
+	assert_output --partial "active"
+}

@@ -30,7 +30,7 @@ if [[ -d "$MODULE_DIR" ]]; then
 
 		# Skip modules listed in hookd.skip (per-repo or global git config)
 		module_name="$(basename "$module" | sed 's/^[0-9]*-//; s/\.sh$//')"
-		if git config --get-all hookd.skip 2>/dev/null | grep -qx "$module_name"; then
+		if git config --get-all hookd.skip 2>/dev/null | grep -qxF "$module_name"; then
 			continue
 		fi
 

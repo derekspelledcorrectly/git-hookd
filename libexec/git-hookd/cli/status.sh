@@ -5,7 +5,8 @@ echo "git-hookd v${VERSION}"
 echo "Hooks directory: $GIT_HOOKD_DIR"
 
 current_hooks_path="$(git config --global core.hooksPath 2>/dev/null || true)"
-if [[ "$current_hooks_path" == "$GIT_HOOKD_DIR" ]]; then
+HOOKD_PATH_TILDE="~${GIT_HOOKD_DIR#"$HOME"}"
+if [[ "$current_hooks_path" == "$GIT_HOOKD_DIR" || "$current_hooks_path" == "$HOOKD_PATH_TILDE" ]]; then
 	echo "core.hooksPath:  $current_hooks_path (active)"
 else
 	echo "core.hooksPath:  ${current_hooks_path:-(not set)} (inactive)"
