@@ -10,14 +10,16 @@ jobs:
   lint:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - name: Install shellcheck
         run: sudo apt-get install -y shellcheck
       - name: Install shfmt
         env:
           SHFMT_VERSION: "3.11.0"
+          SHFMT_SHA256: "1904ec6bac715c1d05cd7f6612eec8f67a625c3749cb327e5bfb4127d09035ff"
         run: |
           curl -fsSL "https://github.com/mvdan/sh/releases/download/v${SHFMT_VERSION}/shfmt_v${SHFMT_VERSION}_linux_amd64" -o /usr/local/bin/shfmt
+          echo "${SHFMT_SHA256}  /usr/local/bin/shfmt" | sha256sum -c -
           chmod +x /usr/local/bin/shfmt
       - name: Lint
         run: make lint
@@ -29,7 +31,7 @@ jobs:
       matrix:
         os: [ubuntu-24.04, macos-latest]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           submodules: true
       - name: Install bats (Linux)
