@@ -84,9 +84,10 @@ if [[ "$install_mode" == "chezmoi" ]]; then
 			printf 'hooksPath already in git config template, skipping.\n'
 		elif grep -q '^\[core\]' "$GIT_CONFIG_TMPL"; then
 			# Insert hooksPath after [core] section header
-			sed -i '' '/^\[core\]/a\
+			tmpfile="$(mktemp)"
+		sed '/^\[core\]/a\
 	hooksPath = ~/.local/share/git-hookd
-' "$GIT_CONFIG_TMPL"
+' "$GIT_CONFIG_TMPL" >"$tmpfile" && mv "$tmpfile" "$GIT_CONFIG_TMPL"
 			printf 'Added hooksPath to git config template.\n'
 		else
 			printf 'Warning: no [core] section found in %s\n' "$GIT_CONFIG_TMPL" >&2
