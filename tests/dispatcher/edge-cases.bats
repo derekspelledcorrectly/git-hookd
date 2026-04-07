@@ -152,6 +152,32 @@ MODULE
 	assert [ ! -f "$REPO_DIR/third-ran" ]
 }
 
+@test "hookd.skip uses fixed-string matching not regex" {
+	mkdir -p "$GIT_HOOKD_DIR/post-checkout.d"
+
+	# Module with a dot in the name (regex . matches any char)
+	cat >"$GIT_HOOKD_DIR/post-checkout.d/50-auto.fetch.sh" <<'MODULE'
+#!/usr/bin/env bash
+touch "$(git rev-parse --show-toplevel)/auto.fetch-ran"
+MODULE
+	chmod +x "$GIT_HOOKD_DIR/post-checkout.d/50-auto.fetch.sh"
+
+	cat >"$GIT_HOOKD_DIR/post-checkout.d/60-auto-fetch.sh" <<'MODULE'
+#!/usr/bin/env bash
+touch "$(git rev-parse --show-toplevel)/auto-fetch-ran"
+MODULE
+	chmod +x "$GIT_HOOKD_DIR/post-checkout.d/60-auto-fetch.sh"
+
+	cd "$REPO_DIR"
+	# Skip "auto.fetch" -- should NOT match "auto-fetch" (regex . would match -)
+	git config hookd.skip "auto.fetch"
+
+	git checkout -b test-branch --quiet
+
+	assert [ ! -f "$REPO_DIR/auto.fetch-ran" ]
+	assert [ -f "$REPO_DIR/auto-fetch-ran" ]
+}
+
 @test "hook with no modules and no local hook exits 0" {
 	cd "$REPO_DIR"
 	run git checkout -b test-branch --quiet

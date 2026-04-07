@@ -13,8 +13,10 @@ threats are:
    resolve relative paths. Crafted entries like `../../.ssh/authorized_keys`
    could read or write outside the worktree.
 
-3. **Environment variable poisoning**: `GIT_HOOKD_DIR` controls where hooks
-   are installed. A malicious value could redirect to attacker-controlled scripts.
+3. **Environment variable misconfiguration**: `GIT_HOOKD_DIR` controls where
+   hooks are installed and where `rm -rf` runs during uninstall. A
+   misconfigured or unintentionally exported value could cause hooks to run
+   from an unexpected location or delete the wrong directory.
 
 4. **Uninstall safety**: `rm -rf` on a user-controlled path requires validation
    to avoid deleting unrelated directories.
@@ -34,8 +36,10 @@ git config hookd.worktree-init.allow-run true
 git config --global hookd.worktree-init.allow-run true
 ```
 
-This follows the same trust model as [direnv](https://direnv.net/): you must
-explicitly opt in per-repo or globally. Git config's standard precedence
+This is inspired by [direnv](https://direnv.net/)'s trust model: you must
+explicitly opt in per-repo or globally. Unlike direnv, which re-validates on
+file content change, the git config toggle trusts all future manifest edits
+once set. Git config's standard precedence
 applies (local overrides global).
 
 ### Path traversal protection
@@ -44,13 +48,16 @@ Both `[link]` and `[copy]` sections validate that resolved paths stay within
 their expected directories. Paths containing `..` that would escape the
 worktree or main worktree are rejected with a warning. Path resolution uses
 `python3 -c "import os; print(os.path.normpath(...))"` for portable
-normalization across macOS and Linux.
+normalization across macOS and Linux (macOS `realpath` lacks the `-m` flag
+needed for paths that don't exist yet).
 
 ### CLI input validation
 
-- `GIT_HOOKD_DIR` is validated on every CLI invocation: must be an absolute
-  path and must not point to dangerous locations (`/`, `$HOME`, `/tmp`, `/etc`,
-  `/usr`, `/var`).
+- `GIT_HOOKD_DIR` is validated on every CLI invocation and in the installer:
+  must be an absolute path, must not contain `..` components, and must not
+  point to dangerous locations (`/`, `$HOME`, `/tmp`, `/etc`, `/usr`, `/var`).
+  Only these exact root paths are blocked; subdirectories like `/tmp/my-hookd`
+  are permitted.
 - Remote names in the auto-fetch module are validated against
   `^[a-zA-Z0-9_.-]+$` to prevent shell injection.
 - Module skip matching uses `grep -qxF` (fixed strings, full line) to prevent
@@ -63,7 +70,8 @@ file exists in the target. This prevents accidental deletion if `GIT_HOOKD_DIR`
 points somewhere unexpected.
 
 When restoring a previously saved `core.hooksPath`, the saved value is validated:
-empty or relative paths are rejected and `core.hooksPath` is unset instead.
+empty paths and paths that don't start with `/` or `~/` are rejected, and
+`core.hooksPath` is unset instead.
 
 ## Supply Chain
 

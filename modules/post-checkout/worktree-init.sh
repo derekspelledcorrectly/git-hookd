@@ -49,7 +49,12 @@ while IFS= read -r line || [[ -n "$line" ]]; do
 done <"$MANIFEST"
 
 # Validate that a manifest path stays within its base directory.
-# Uses python3 for portable path normalization (macOS realpath lacks -m).
+# Uses python3 for portable path normalization because the target path
+# may not exist yet, and macOS realpath lacks -m (canonicalize-missing).
+if ! command -v python3 >/dev/null 2>&1; then
+	printf '[worktree-init] Error: python3 is required for path traversal protection but was not found\n' >&2
+	exit 1
+fi
 path_is_contained() {
 	local base="$1" rel="$2"
 	local resolved
@@ -104,7 +109,7 @@ for file in "${copy_files[@]+"${copy_files[@]}"}"; do
 	printf '[worktree-init] Copied %s\n' "$file"
 done
 
-# Gate [run] commands behind explicit opt-in (like direnv allow).
+# Gate [run] commands behind explicit opt-in (inspired by direnv's trust model).
 # Uses standard git config precedence: local (per-repo) > global.
 if [[ ${#run_cmds[@]} -gt 0 ]]; then
 	run_allowed="$(git config --bool hookd.worktree-init.allow-run 2>/dev/null || echo "false")"

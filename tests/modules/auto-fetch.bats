@@ -194,7 +194,7 @@ fake_git() {
 	git branch feature
 
 	run fake_git checkout feature --quiet
-	assert_success
+	assert_failure
 	assert [ ! -f "$FETCH_LOG" ]
 	assert_output --partial "invalid remote name"
 }
@@ -205,7 +205,7 @@ fake_git() {
 	git branch feature
 
 	run fake_git checkout feature --quiet
-	assert_success
+	assert_failure
 	assert [ ! -f "$FETCH_LOG" ]
 	assert_output --partial "invalid remote name"
 }

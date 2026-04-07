@@ -16,6 +16,19 @@ if [[ "$GIT_HOOKD_DIR" != /* ]]; then
 	printf 'Error: GIT_HOOKD_DIR must be an absolute path\n' >&2
 	exit 1
 fi
+# Reject paths with .. components (could bypass blocklist via /safe/../../tmp)
+case "$GIT_HOOKD_DIR" in
+	*/..)
+		printf 'Error: GIT_HOOKD_DIR must not contain ".." components\n' >&2
+		exit 1
+		;;
+	*/../*)
+		printf 'Error: GIT_HOOKD_DIR must not contain ".." components\n' >&2
+		exit 1
+		;;
+esac
+# Strip trailing slash for consistent comparison, but not from "/"
+[[ "$GIT_HOOKD_DIR" != "/" ]] && GIT_HOOKD_DIR="${GIT_HOOKD_DIR%/}"
 case "$GIT_HOOKD_DIR" in
 	/ | "$HOME" | /tmp | /etc | /usr | /var)
 		printf 'Error: GIT_HOOKD_DIR "%s" is a dangerous path\n' "$GIT_HOOKD_DIR" >&2

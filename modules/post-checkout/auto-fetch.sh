@@ -14,8 +14,8 @@ remote="$(git config hookd.auto-fetch.remote 2>/dev/null || echo "origin")"
 
 # Validate remote name format (prevent URLs or special characters)
 if [[ ! "$remote" =~ ^[a-zA-Z0-9_.-]+$ ]]; then
-	printf '[auto-fetch] Warning: invalid remote name "%s", skipping\n' "$remote" >&2
-	exit 0
+	printf '[auto-fetch] Error: invalid remote name "%s", check hookd.auto-fetch.remote config\n' "$remote" >&2
+	exit 1
 fi
 
 cooldown="$(git config hookd.auto-fetch.cooldown 2>/dev/null || echo "60")"

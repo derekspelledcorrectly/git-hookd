@@ -175,3 +175,15 @@ teardown() {
 	assert_failure
 	assert_output --partial "dangerous path"
 }
+
+@test "rejects GIT_HOOKD_DIR with .. components" {
+	run env GIT_HOOKD_DIR="/opt/safe/../../tmp" "$PROJECT_ROOT/bin/git-hookd" status
+	assert_failure
+	assert_output --partial '".."'
+}
+
+@test "rejects GIT_HOOKD_DIR set to HOME with trailing slash" {
+	run env GIT_HOOKD_DIR="$HOME/" "$PROJECT_ROOT/bin/git-hookd" status
+	assert_failure
+	assert_output --partial "dangerous path"
+}

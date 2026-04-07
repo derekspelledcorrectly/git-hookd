@@ -8,6 +8,11 @@ setup() {
 	setup_temp_dir
 	setup_hookd
 
+	# Isolate HOME so git config --global doesn't leak between tests
+	ORIG_HOME="$HOME"
+	export HOME="$BATS_TEST_TMPDIR/fakehome"
+	mkdir -p "$HOME"
+
 	# Create a test repo and point it at our hookd install
 	REPO_DIR=$(setup_test_repo)
 	git -C "$REPO_DIR" config core.hooksPath "$GIT_HOOKD_DIR"
@@ -23,6 +28,7 @@ setup() {
 
 teardown() {
 	cd /
+	export HOME="$ORIG_HOME"
 	teardown_temp_dir
 }
 
@@ -371,6 +377,18 @@ MANIFEST
 
 	assert_output --partial "path traversal"
 	assert [ ! -e "$BATS_TEST_TMPDIR/wt-link-traversal/../../../tmp/evil.txt" ]
+}
+
+@test "[link] rejects absolute paths with warning" {
+	cd "$REPO_DIR"
+	printf '[link]\n/etc/passwd\n' >.worktree-init
+	git branch wt-link-absolute --quiet
+
+	run git -c commit.gpgsign=false worktree add "$BATS_TEST_TMPDIR/wt-link-absolute" wt-link-absolute --quiet
+	assert_success
+
+	assert_output --partial "path traversal"
+	assert [ ! -L "$BATS_TEST_TMPDIR/wt-link-absolute/etc/passwd" ]
 }
 
 @test "[copy] rejects path traversal with warning" {

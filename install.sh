@@ -13,6 +13,26 @@ if ! command -v git >/dev/null 2>&1; then
 	exit 1
 fi
 
+# Validate GIT_HOOKD_DIR before cloning into it
+if [[ "$GIT_HOOKD_DIR" != /* ]]; then
+	printf 'Error: GIT_HOOKD_DIR must be an absolute path\n' >&2
+	exit 1
+fi
+case "$GIT_HOOKD_DIR" in
+	*/..) ;&
+	*/../*)
+		printf 'Error: GIT_HOOKD_DIR must not contain ".." components\n' >&2
+		exit 1
+		;;
+esac
+[[ "$GIT_HOOKD_DIR" != "/" ]] && GIT_HOOKD_DIR="${GIT_HOOKD_DIR%/}"
+case "$GIT_HOOKD_DIR" in
+	/ | "$HOME" | /tmp | /etc | /usr | /var)
+		printf 'Error: GIT_HOOKD_DIR "%s" is a dangerous path\n' "$GIT_HOOKD_DIR" >&2
+		exit 1
+		;;
+esac
+
 # --- Chezmoi detection ---
 
 install_mode="standard"
