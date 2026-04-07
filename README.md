@@ -169,6 +169,20 @@ npm install
 
 Sections execute in fixed order: link, copy, run (regardless of order in the file).
 
+> **Security note**: The `[run]` section is **blocked by default**. Commands are
+> displayed but not executed until you explicitly opt in via git config:
+>
+> ```bash
+> # Allow in this repo only
+> git config hookd.worktree-init.allow-run true
+>
+> # Allow globally
+> git config --global hookd.worktree-init.allow-run true
+> ```
+>
+> This prevents untrusted manifests from running arbitrary commands on checkout.
+> See [SECURITY.md](SECURITY.md) for details.
+
 ### auto-fetch
 
 Background fetch after branch switch. Keeps remote-tracking refs fresh so you see divergence early without remembering to fetch manually.
