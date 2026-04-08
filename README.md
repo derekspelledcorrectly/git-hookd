@@ -229,6 +229,31 @@ git config --unset hookd.skip protect-branch
 
 This uses standard git config precedence, so per-repo settings override global ones.
 
+### Coexisting with other hook tools
+
+Tools like Husky, Lefthook, and pre-commit overwrite `core.hooksPath` during their install step, silently replacing git-hookd's dispatcher. Use `exec` to run those tools safely:
+
+```bash
+# Install husky without clobbering git-hookd
+git hookd exec -- npx husky install
+
+# Same pattern works for any tool that sets core.hooksPath
+git hookd exec -- lefthook install
+```
+
+`exec` temporarily unsets `core.hooksPath`, runs your command, then restores git-hookd automatically.
+
+If clobbering does happen, `git hookd status` will warn you:
+
+```
+WARNING: core.hooksPath has been changed to: .husky
+  This may have been set by another tool (husky, lefthook, etc.)
+  To restore git-hookd:  git hookd install --force
+  To safely run tools:   git hookd exec -- <command>
+```
+
+Note that git-hookd's dispatcher already chains to `.git/hooks/` after running modules, so tools that install local repo hooks (rather than setting `core.hooksPath`) work automatically with no extra configuration.
+
 ## Writing Your Own Modules
 
 A module is just an executable shell script placed in the right directory:
