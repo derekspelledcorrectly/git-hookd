@@ -15,7 +15,12 @@ saved="$(git config --global core.hooksPath 2>/dev/null || true)"
 
 restore() {
 	if [[ -n "$saved" ]]; then
-		git config --global core.hooksPath "$saved"
+		if ! git config --global core.hooksPath "$saved"; then
+			echo "ERROR: Failed to restore core.hooksPath to: $saved" >&2
+			echo "  Run manually: git config --global core.hooksPath '$saved'" >&2
+		fi
+	else
+		git config --global --unset core.hooksPath 2>/dev/null || true
 	fi
 }
 trap restore EXIT

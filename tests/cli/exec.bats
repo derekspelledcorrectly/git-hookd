@@ -56,3 +56,11 @@ teardown() {
 	assert_failure
 	assert_output --partial "Usage:"
 }
+
+@test "exec keeps hooksPath unset when it was never set" {
+	git config --global --unset core.hooksPath
+	run "$CLI" exec -- true
+	assert_success
+	run git config --global core.hooksPath
+	assert_failure
+}
