@@ -42,11 +42,28 @@ teardown() {
 	assert_output --partial "1 module"
 }
 
-@test "status shows active when core.hooksPath uses tilde form" {
-	# Install stores tilde form; simulate it
-	HOOKD_PATH_TILDE="~${GIT_HOOKD_DIR#"$HOME"}"
-	git config --global core.hooksPath "$HOOKD_PATH_TILDE"
+@test "status warns when core.hooksPath is clobbered" {
+	git config --global core.hooksPath "/tmp/some-other-tool"
 	run "$CLI" status
 	assert_success
+	assert_output --partial "WARNING"
+	assert_output --partial "/tmp/some-other-tool"
+	assert_output --partial "git hookd install --force"
+	assert_output --partial "git hookd exec"
+}
+
+@test "status does not warn when core.hooksPath is unset" {
+	git config --global --unset core.hooksPath
+	run "$CLI" status
+	assert_success
+	refute_output --partial "WARNING"
+}
+
+@test "status detects active when hooksPath uses tilde form" {
+	# install.sh stores with ~ prefix; status should recognize it as active
+	git config --global core.hooksPath "~/.local/share/git-hookd"
+	GIT_HOOKD_DIR="$HOME/.local/share/git-hookd" run "$CLI" status
+	assert_success
 	assert_output --partial "active"
+	refute_output --partial "WARNING"
 }
