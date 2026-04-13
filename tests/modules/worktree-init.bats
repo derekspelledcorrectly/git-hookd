@@ -325,14 +325,14 @@ MANIFEST
 
 # --- Security: [run] opt-in gate ---
 
-@test "[run] blocked when allow-run is not configured" {
+@test "[run] skipped with warning when allow-run is not configured" {
 	cd "$REPO_DIR"
 	git config --unset hookd.worktree-init.allow-run
 	printf '[run]\ntouch marker.txt\n' >.worktree-init
 	git branch wt-run-blocked --quiet
 
 	run git -c commit.gpgsign=false worktree add "$BATS_TEST_TMPDIR/wt-run-blocked" wt-run-blocked --quiet
-	assert_failure
+	assert_success
 
 	assert [ ! -f "$BATS_TEST_TMPDIR/wt-run-blocked/marker.txt" ]
 	assert_output --partial "touch marker.txt"

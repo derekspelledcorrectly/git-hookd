@@ -120,7 +120,7 @@ if [[ ${#run_cmds[@]} -gt 0 ]]; then
 		done
 		printf '[worktree-init] To allow for this repo: git config hookd.worktree-init.allow-run true\n' >&2
 		printf '[worktree-init] To allow globally:      git config --global hookd.worktree-init.allow-run true\n' >&2
-		exit 1
+		exit 0
 	fi
 fi
 
