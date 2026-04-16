@@ -54,15 +54,33 @@ teardown() {
 
 @test "status does not warn when core.hooksPath is unset" {
 	git config --global --unset core.hooksPath
-	run "$CLI" status
+	run env -C "$BATS_TEST_TMPDIR" "$CLI" status
 	assert_success
 	refute_output --partial "WARNING"
+}
+
+@test "status warns when local repo overrides core.hooksPath" {
+	REPO_DIR=$(setup_test_repo)
+	git -C "$REPO_DIR" config core.hooksPath "/tmp/some-local-hooks"
+	run env -C "$REPO_DIR" "$CLI" status
+	assert_success
+	assert_output --partial "WARNING"
+	assert_output --partial "local"
+	assert_output --partial "/tmp/some-local-hooks"
+}
+
+@test "status does not warn when local hooksPath matches git-hookd" {
+	REPO_DIR=$(setup_test_repo)
+	git -C "$REPO_DIR" config core.hooksPath "$GIT_HOOKD_DIR"
+	run env -C "$REPO_DIR" "$CLI" status
+	assert_success
+	refute_output --partial "local"
 }
 
 @test "status detects active when hooksPath uses tilde form" {
 	# install.sh stores with ~ prefix; status should recognize it as active
 	git config --global core.hooksPath "~/.local/share/git-hookd"
-	GIT_HOOKD_DIR="$HOME/.local/share/git-hookd" run "$CLI" status
+	run env -C "$BATS_TEST_TMPDIR" env GIT_HOOKD_DIR="$HOME/.local/share/git-hookd" "$CLI" status
 	assert_success
 	assert_output --partial "active"
 	refute_output --partial "WARNING"
