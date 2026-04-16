@@ -10,3 +10,28 @@
 
 # Test artifacts
 tmp/
+
+# Runtime install artifacts (in-place mode: GIT_HOOKD_DIR == source repo,
+# e.g. chezmoi externals). The dispatcher populates these at install/enable
+# time and they are per-machine state, not source.
+/_hookd
+/.previous-hooks-path
+/applypatch-msg
+/commit-msg
+/post-applypatch
+/post-checkout
+/post-commit
+/post-merge
+/post-receive
+/post-rewrite
+/post-update
+/pre-applypatch
+/pre-auto-gc
+/pre-commit
+/pre-merge-commit
+/pre-push
+/pre-rebase
+/pre-receive
+/prepare-commit-msg
+/update
+/*.d/
